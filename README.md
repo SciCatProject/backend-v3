@@ -3,7 +3,7 @@
 
 The data catalog backend is based on [NoSQL database MongoDB](https://www.mongodb.com/), [the Node based web application framework Express](http://expressjs.com/) and [the API framework Loopback](http://loopback.io/) technology stack (the "MEL" part of the "MELANIE" technology stack). It provides a REST based API which allows to store information about datasets and to allow to answer queries about the stored meta data for these datasets
 
-# Getting started
+# Getting started 
 
 ## Prerequisites
 
