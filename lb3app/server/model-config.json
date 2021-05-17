@@ -5,13 +5,13 @@
       "loopback/server/models",
       "../common/models",
       "./models",
-      "./node_modules/loopback-component-passport/lib/models"
+      "./../node_modules/loopback-component-passport/lib/models"
     ],
     "mixins": [
       "loopback/common/mixins",
       "loopback/server/mixins",
-      "../node_modules/loopback-component-mq/lib/mixins",
-      "../node_modules/loopback-ds-timestamp-mixin",
+      "../../node_modules/loopback-component-mq/lib/mixins",
+      "../../node_modules/loopback-ds-timestamp-mixin",
       "../common/mixins",
       "./mixins"
     ]

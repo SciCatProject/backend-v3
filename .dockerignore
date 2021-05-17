@@ -1,6 +1,5 @@
 node_modules
-# package-lock.json
-# **/*.local.js*
-**/*.production.js*
-**/*.staging.js*
-**/*.development.js*
+npm-debug.log
+/dist
+# Cache used by TypeScript's incremental build
+*.tsbuildinfo

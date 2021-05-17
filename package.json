@@ -1,19 +1,61 @@
 {
   "name": "dacat-api",
-  "version": "3.1.0",
-  "main": "server/server.js",
+  "version": "4.0.0.-alpha",
+  "description": "catamel migration to loopback 4",
+  "keywords": [
+    "loopback-application",
+    "loopback"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=10"
+    "node": ">=10.16"
   },
   "scripts": {
-    "lint": "eslint --fix .",
-    "start": "node .",
-    "posttest": "eslint .",
-    "test": "./node_modules/mocha/bin/mocha --timeout=30000 --reporter spec --exit",
-    "snyk-protect": "snyk protect",
-    "prepare": "npm run snyk-protect"
+    "build": "lb-tsc",
+    "build:watch": "lb-tsc --watch",
+    "lint": "npm run eslint && npm run prettier:check",
+    "lint:fix": "npm run eslint:fix && npm run prettier:fix",
+    "prettier:cli": "lb-prettier \"**/*.ts\" \"**/*.js\"",
+    "prettier:check": "npm run prettier:cli -- -l",
+    "prettier:fix": "npm run prettier:cli -- --write",
+    "eslint": "lb-eslint --report-unused-disable-directives .",
+    "eslint:fix": "npm run eslint -- --fix",
+    "pretest": "npm run rebuild",
+    "test": "lb-mocha --allow-console-logs \"dist/__tests__\"",
+    "posttest": "npm run lint",
+    "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js && npm run posttest",
+    "docker:build": "docker build -t catamel .",
+    "docker:run": "docker run -p 3000:3000 -d catamel",
+    "premigrate": "npm run build",
+    "migrate": "node ./dist/migrate",
+    "preopenapi-spec": "npm run build",
+    "openapi-spec": "node ./dist/openapi-spec",
+    "prestart": "npm run rebuild",
+    "start": "node -r source-map-support/register .",
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
+    "rebuild": "npm run clean && npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "Max Novelli <Max.Novelli@ess.eu>",
+  "license": "",
+  "files": [
+    "README.md",
+    "dist",
+    "src",
+    "!*/__tests__"
+  ],
   "dependencies": {
+    "@loopback/boot": "^3.4.0",
+    "@loopback/booter-lb3app": "^2.4.0",
+    "@loopback/core": "^2.16.0",
+    "@loopback/repository": "^3.6.0",
+    "@loopback/rest": "^9.3.0",
+    "@loopback/rest-explorer": "^3.3.0",
+    "@loopback/service-proxy": "^3.2.0",
     "amqplib": "^0.7.1",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
@@ -39,29 +81,17 @@
     "passport-openidconnect": "^0.0.2",
     "serve-favicon": "2.5.0",
     "snyk": "^1.518.0",
-    "strong-error-handler": "3.5.0",
     "superagent": "^5.3.1",
+    "tslib": "^2.0.0",
     "uuid": "^7.0.3"
   },
-  "optionalDependencies": {
-    "loopback-connector-kafka": "^0.2.1"
-  },
   "devDependencies": {
-    "@mean-expert/loopback-sdk-builder": "^2.3.1",
-    "chai": "^4.2.0",
-    "chai-http": "^4.3.0",
-    "eslint": "^6.8.0",
-    "eslint-config-loopback": "^13.1.0",
-    "mocha": "^7.2.0",
-    "nock": "^12.0.3",
-    "nodemon": "^2.0.0",
-    "supertest": "^4.0.2"
-  },
-  "repository": {
-    "type": "",
-    "url": ""
-  },
-  "license": "GPL-3.0",
-  "description": "dacat-api",
-  "snyk": true
+    "@loopback/build": "^6.4.0",
+    "source-map-support": "^0.5.19",
+    "@loopback/testlab": "^3.4.0",
+    "@types/node": "^10.17.59",
+    "@loopback/eslint-config": "^10.2.0",
+    "eslint": "^7.25.0",
+    "typescript": "~4.2.4"
+  }
 }

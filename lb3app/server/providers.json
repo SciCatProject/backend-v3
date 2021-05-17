@@ -1,0 +1,36 @@
+{
+    "local": {
+        "provider": "local",
+        "module": "passport-local",
+        "usernameField": "username",
+        "passwordField": "password",
+        "authPath": "/auth/local",
+        "successRedirect": "/auth/account",
+        "failureRedirect": "/local",
+        "failureFlash": true
+    },
+    "ldap": {
+        "provider": "ldap",
+        "authScheme": "ldap",
+        "module": "passport-ldapauth",
+        "authPath": "/auth/msad",
+        "successRedirect": "/auth/account",
+        "failureRedirect": "/msad",
+        "handleErrorsAsFailures": true,
+        "session": true,
+        "json": true,
+        "failureFlash": true,
+        "profileAttributesFromLDAP": {
+            "displayName": "displayName",
+            "email": "mail"
+        },
+        "server": {
+            "url": "ldaps://esss.lu.se:636/",
+            "bindDn": "srv_scicat_ldapread@esss.lu.se",
+            "bindCredentials": "0O85FldW36956869",
+            "searchBase": "OU=ESS Users,DC=esss,DC=lu,DC=se",
+            "includeRaw": true,
+            "searchFilter": "(&(samAccountType=805306368)(sAMAccountName={{username}}))"
+        }
+    }
+}
