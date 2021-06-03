@@ -40,6 +40,9 @@ export class CatamelApplication extends BootMixin(
         extensions: ['.controller.js'],
         nested: true,
       },
+      lb3app: {
+        mode: 'fullApp',
+      }
     };
 
     this.component(Lb3AppBooterComponent);
