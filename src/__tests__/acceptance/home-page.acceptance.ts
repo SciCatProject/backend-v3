@@ -1,5 +1,5 @@
 import {Client} from '@loopback/testlab';
-import {CatamelApplication} from '../..';
+import {CatamelApplication} from '../../application';
 import {setupApplication} from './test-helper';
 
 describe('HomePage', () => {

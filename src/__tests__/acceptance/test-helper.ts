@@ -1,4 +1,4 @@
-import {CatamelApplication} from '../..';
+import {CatamelApplication} from '../../application';
 import {
   createRestAppClient,
   givenHttpServerConfig,

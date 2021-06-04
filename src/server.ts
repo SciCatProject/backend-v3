@@ -4,7 +4,7 @@ import express, {Request, Response} from 'express';
 import * as http from 'http';
 import {AddressInfo} from 'net';
 import * as path from 'path';
-import {ApplicationConfig, CatamelApplication} from './application';
+import {CatamelApplication} from './application';
 
 const loopback = require('loopback');
 const compression = require('compression');
