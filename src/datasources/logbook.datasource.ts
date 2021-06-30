@@ -1,8 +1,11 @@
 import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
 
+
+const mainConfig = require("../../server/config.local");
+
 // it should be 'http://localhost:3030/scichatapi'
-const baseURL = config.logbook.baseUrl;
+const baseUrl = mainConfig.logbook.baseUrl;
 
 const config = {
   name: 'logbook',
@@ -13,7 +16,7 @@ const config = {
     {
       template: {
         method: "POST",
-        url: baseURL + "/User/login",
+        url: baseUrl + "/User/login",
         headers: {
           accept: "application/json",
           "content-type": "application/json",
@@ -41,7 +44,7 @@ const config = {
           Authorization: "Bearer {!accessToken:string}",
         },
         functions: {
-          find: ["filter"]
+          find: ["filter", "accessToken"],
         }
       }
     },
@@ -55,7 +58,7 @@ const config = {
           Authorization: "Bearer {!accessToken:string}",
         },
         functions: {
-          findByName: ["name","filter"]
+          findByName: ["name", "filter", "accessToken"],
         }
       }
     },
@@ -71,9 +74,9 @@ const config = {
         body: {
           msgtype: "m.text",
           body: "{!data:text}"
-        }
+        },
         functions: {
-          sendMessage: ["name","data"]
+          sendMessage: ["name", "data", "accessToken"]
         }
       }
     }

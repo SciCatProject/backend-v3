@@ -32,6 +32,7 @@ if (require.main === module) {
         // useful when used with OpenAPI-to-GraphQL to locate your application
         setServersFromRequest: true,
       },
+      listenOnStart: false,
     },
   };
   main(config).catch(err => {
