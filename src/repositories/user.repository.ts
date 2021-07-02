@@ -4,6 +4,7 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {Getter, inject} from '@loopback/core';
+import {SchemaObject} from '@loopback/rest';
 import {
   DefaultCrudRepository,
   HasManyRepositoryFactory,
@@ -11,23 +12,45 @@ import {
   juggler,
   repository,
 } from '@loopback/repository';
-import {User, UserCredentials} from '../models';
+import {UserModel, UserCredentials} from '../models';
 import {UserCredentialsRepository} from '.';
 
-// principal can either be an account name or an email address
+// username can either be an account name or an email address
 export type Credentials = {
-  principal: string;
+  username: string;
   password: string;
 };
 
+const CredentialsSchema: SchemaObject = {
+  type: 'object',
+  required: ['username', 'password'],
+  properties: {
+    username: {
+      type: 'string',
+    },
+    password: {
+      type: 'string',
+      minLength: 8,
+    },
+  },
+};
+
+export const CredentialsRequestBody = {
+  description: 'The input of login function',
+  required: true,
+  content: {
+    'application/json': {schema: CredentialsSchema},
+  },
+};
+
 export class UserRepository extends DefaultCrudRepository<
-  User,
-  typeof User.prototype.id
+  UserModel,
+  typeof UserModel.prototype.id
 > {
 
   public readonly userCredentials: HasOneRepositoryFactory<
     UserCredentials,
-    typeof User.prototype.id
+    typeof UserModel.prototype.id
   >;
 
   constructor(
@@ -37,7 +60,7 @@ export class UserRepository extends DefaultCrudRepository<
       UserCredentialsRepository
     >,
   ) {
-    super(User, dataSource);
+    super(UserModel, dataSource);
     this.userCredentials = this.createHasOneRepositoryFactoryFor(
       'userCredentials',
       userCredentialsRepositoryGetter,
@@ -45,7 +68,7 @@ export class UserRepository extends DefaultCrudRepository<
   }
 
   async findCredentials(
-    userId: typeof User.prototype.id,
+    userId: typeof UserModel.prototype.id,
   ): Promise<UserCredentials | undefined> {
     try {
       return await this.userCredentials(userId).get();

@@ -1,6 +1,8 @@
 import { SchemaObject, SchemaRef } from '@loopback/rest';
 
 export * from './logbook.service';
+export * from './encryption.service';
+export * from './user.service';
 
 export interface MessageDef {
     type: string;

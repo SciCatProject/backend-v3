@@ -1,6 +1,13 @@
 import {Entity, model, property, hasOne} from '@loopback/repository';
 import {UserCredentials} from './user-credentials.model';
 
+
+export type Credentials = {
+  email: string;
+  password: string;
+};
+
+
 /*
  * Please refer to the following page
  * for more info on id settings
@@ -17,7 +24,7 @@ import {UserCredentials} from './user-credentials.model';
     strictObjectIDCoercion: true
   }
 })
-export class User extends Entity {
+export class UserModel extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -62,13 +69,13 @@ export class User extends Entity {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
 
-  constructor(data?: Partial<User>) {
+  constructor(data?: Partial<UserModel>) {
     super(data);
   }
 }
 
-export interface UserRelations {
+export interface UserModelRelations {
   // describe navigational properties here
 }
 
-export type UserWithRelations = User & UserRelations;
+export type UserWithRelations = UserModel & UserModelRelations;
