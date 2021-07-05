@@ -14,8 +14,13 @@ import {
   requestBody,
   SchemaObject,
 } from "@loopback/rest";
-import { LogbookDef, LogbookSchema, MessageDef, MessageSchema, LogbookService, sendMessageRequestBody, sortMessages } from "../services";
-//import { Utils } from "../utils";
+import { UserRepository } from "../repositories";
+import { LogbookDef, LogbookSchema, MessageDef, MessageSchema, LogbookService, sendMessageRequestBody } from "../services";
+import { TokenServiceBindings } from "@loopback/authentication-jwt";
+import { SecurityBindings, securityId, UserProfile } from "@loopback/security";
+import { authenticate, AuthenticationComponent, TokenService, UserService } from '@loopback/authentication';
+import { getUserProposalIds, sortMessages } from "../utils";
+import { ProposalModel } from "../models";
 const mainConfig = require("../server/config.local")
 
 
@@ -31,12 +36,19 @@ export class LogbookController {
 
   constructor(
     @inject("service.logbook") protected logbookService: LogbookService,
+    @repository(UserRepository)
+    public userRepository: UserRepository,
+    @inject(TokenServiceBindings.TOKEN_SECRET)
+    private jwtSecret: string,
+    @inject(SecurityBindings.USER, {optional: true})
+    private user: UserProfile,
   ) {
     this.logbookEnabled = mainConfig.logbook && mainConfig.logbook.enabled ? mainConfig.logbook.enabled : false;
     this.username = mainConfig.logbook && mainConfig.logbook.username ? mainConfig.logbook.username : "";
     this.password = mainConfig.logbook && mainConfig.logbook.password ? mainConfig.logbook.password : "";
   }
 
+  @authenticate('jwt')
   @get('/Logbooks', {
     parameters: [
       {
@@ -84,7 +96,7 @@ export class LogbookController {
             .reverse();
           var logbooks = nonEmptyLogbooks.concat(emptyLogbooks);
           console.log("Found Logbooks " + JSON.stringify({ count: logbooks.length }));
-          const proposalIds = await getUserProposalIds(this.accessToken);
+          const proposalIds = await getUserProposalIds(this.userRepository,this.user[securityId]);
           logbooks = logbooks 
             ? logbooks.filter(({ name }) => proposalIds.includes(name))
             : [];
@@ -108,6 +120,7 @@ export class LogbookController {
     return [];
   }
  
+  @authenticate('jwt')
   @get('/Logbooks/{name}',{
     parameters: [
       {
@@ -153,7 +166,7 @@ export class LogbookController {
           const results = await this.logbookService.findByName(logbookName,filter!,this.accessToken);
           console.log("Found Logbook " + JSON.stringify({ name: logbookName }));
           const { skip, limit, sortField } = JSON.parse(filter!);
-          const proposalIds = await getUserProposalIds(this.accessToken);
+          const proposalIds = await getUserProposalIds(this);
           var logbook = proposalIds.includes(results.name) ? results : null;
           console.log("User Logbook " + JSON.stringify({ name: (logbook ? logbook.name : "" )}));
           console.log("Applying filters " + JSON.stringify({ skip, limit, sortField }));
@@ -190,6 +203,7 @@ export class LogbookController {
     }
   }
   
+  @authenticate('jwt')
   @post('/Logbooks/{name}/message',{
     description: "Send message to a logbook",
     parameters: [
@@ -201,17 +215,19 @@ export class LogbookController {
           required: ["true"],
           description: "Name of the Logbook",
         }
-      },
-      {
-        name: "data", 
-        in: "body",
-        schema: {
-          type: "object",
-          required: ["true"],
-          description: "JSON object with the key message",
-        }
       }
     ],
+    requestBody: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            required: ["true"],
+            description: "JSON object with the key message"
+          }
+        }
+      }
+    },
     responses: {
       '200': {
         description: "Object containing the event id of the message",
@@ -251,6 +267,94 @@ export class LogbookController {
         }
       }
     }
+  }
+
+  private async getUserProposalIds(): Promise<ProposalModel> {
+  
+    let options = {};
+  
+    try {
+      const userInfo = await this.userRepository.findById(this.user[securityId]);
+
+      if (userInfo) {
+        options.currentGroups = [];
+        if (userInfo.profile) {
+          let groups = userIdentity.profile.accessGroups;
+          if (!groups) {
+            groups = [];
+          }
+          const regex = new RegExp(userIdentity.profile.email, "i");
+  
+          const shareGroup = await ShareGroup.find({
+            where: { members: { regexp: regex } },
+          });
+          groups = [...groups, ...shareGroup.map(({ id }) => String(id))];
+          options.currentGroups = groups;
+        }
+      } else {
+        const roleMapping = await RoleMapping.find(
+          { where: { principalId: String(userId) } },
+          options
+        );
+        const roleIdList = roleMapping.map((instance) => instance.roleId);
+  
+        const role = await Role.find({
+          where: { id: { inq: roleIdList } },
+        });
+        const roleNameList = role.map((instance) => instance.name);
+        roleNameList.push(user.username);
+        options.currentGroups = roleNameList;
+      }
+  
+      const proposals = await Proposal.find({
+        where: { ownerGroup: { inq: options.currentGroups } },
+      });
+      return proposals.map((proposal) => proposal.proposalId);
+    } catch (err) {
+      logger.logError(err.message, {
+        location: "Logbook.getUserProposalsIds",
+        this.user.userId
+        options,
+      });
+    };
+  }
+  
+  export function sortMessages(messages: MessageDef[], sortField: string) {
+  const [column, direction] = sortField.split(":");
+  const sorted = messages.sort(
+    (a, b):number => {
+      switch (column) {
+        case "timestamp": {
+          return a.origin_server_ts - b.origin_server_ts;
+        }
+        case "sender": {
+          if (a.sender.replace("@", "") < b.sender.replace("@", "")) {
+            return -1;
+          }
+          if (a.sender.replace("@", "") > b.sender.replace("@", "")) {
+            return 1;
+          }
+        }
+        case "entry": {
+          if (a.content.body < b.content.body) {
+            return -1;
+          }
+          if (a.content.body > b.content.body) {
+            return 1;
+          }
+        }
+      }
+      return 0;
+    }
+  );
+  switch (direction) {
+    case "asc": {
+      return sorted;
+    }
+    case "desc": {
+      return sorted.reverse();
+    }
+  }
   }
 }
 

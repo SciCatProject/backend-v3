@@ -20,8 +20,15 @@ import {
 } from '@loopback/rest';
 import {inject} from '@loopback/context';
 import {UserModel} from '../models';
-import {UserRepository, CredentialsRequestBody, Credentials} from '../repositories';
-import { PasswordHasherBindings, UserServiceBindings } from '../utils';
+import {UserRepository} from '../repositories';
+import { 
+  PasswordHasherBindings, 
+  UserServiceBindings,
+  CredentialsRequestBody, 
+  Credentials,
+  ChangePasswordRequestBody,
+  ChangePassword 
+} from '../utils';
 import { PasswordHasher, AppUserService } from '../services';
 import { TokenServiceBindings } from '@loopback/authentication-jwt';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
@@ -229,8 +236,11 @@ export class UserController {
       },
     },
   })
-  async logout(): Promise<string> {
-    return this.jwtService.revokeToken();
+  async logout(): Promise<boolean> {
+    if (this.jwtService.revokeToken) {
+      return await this.jwtService.revokeToken(this.jwtSecret);
+    }
+    return false;
   }
 
   @authenticate('jwt')
@@ -252,7 +262,7 @@ export class UserController {
     @requestBody(ChangePasswordRequestBody) changePassword: ChangePassword,
   ): Promise<boolean> {
     // extract credentials from changePassword info
-    const credentials = this.userServices.extractOldCredentials(changePassword);
+    const credentials = this.userService.extractOldCredentials(changePassword);
 
     // ensure the user exists, and the password is correct
     const user = await this.userService.verifyCredentials(credentials);
@@ -260,10 +270,13 @@ export class UserController {
     // change user password
     const passwordChanged = await this.userService.changePassword(user,changePassword)
 
-    if (passwordChanged) {
-      return this.jwtService.revokeToken();
-
+    // if everything goes according to plan (aka the password has been changed)
+    // we invalidat the jwt and force the user to login with the new passowrd
+    if (passwordChanged && this.jwtService.revokeToken) {
+      return await this.jwtService.revokeToken(this.jwtSecret);
     }
     return false;
   }
+
+  
 }

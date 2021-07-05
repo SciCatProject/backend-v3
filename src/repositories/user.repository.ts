@@ -14,7 +14,9 @@ import {
 } from '@loopback/repository';
 import {UserModel, UserCredentials} from '../models';
 import {UserCredentialsRepository} from '.';
+import { Credentials, CredentialsRequestBody } from '../utils';
 
+/*
 // username can either be an account name or an email address
 export type Credentials = {
   username: string;
@@ -42,6 +44,7 @@ export const CredentialsRequestBody = {
     'application/json': {schema: CredentialsSchema},
   },
 };
+*/
 
 export class UserRepository extends DefaultCrudRepository<
   UserModel,
