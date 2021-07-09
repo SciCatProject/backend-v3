@@ -12,39 +12,10 @@ import {
   juggler,
   repository,
 } from '@loopback/repository';
-import {UserModel, UserCredentials} from '../models';
-import {UserCredentialsRepository} from '.';
+import {UserModel, UserCredentialsModel, RoleModel} from '../models';
+import {UserCredentialsRepository, RoleRepository} from '.';
 import { Credentials, CredentialsRequestBody } from '../utils';
 
-/*
-// username can either be an account name or an email address
-export type Credentials = {
-  username: string;
-  password: string;
-};
-
-const CredentialsSchema: SchemaObject = {
-  type: 'object',
-  required: ['username', 'password'],
-  properties: {
-    username: {
-      type: 'string',
-    },
-    password: {
-      type: 'string',
-      minLength: 8,
-    },
-  },
-};
-
-export const CredentialsRequestBody = {
-  description: 'The input of login function',
-  required: true,
-  content: {
-    'application/json': {schema: CredentialsSchema},
-  },
-};
-*/
 
 export class UserRepository extends DefaultCrudRepository<
   UserModel,
@@ -52,7 +23,12 @@ export class UserRepository extends DefaultCrudRepository<
 > {
 
   public readonly userCredentials: HasOneRepositoryFactory<
-    UserCredentials,
+    UserCredentialsModel,
+    typeof UserModel.prototype.id
+  >;
+
+  public readonly roles: HasManyRepositoryFactory<
+    RoleModel,
     typeof UserModel.prototype.id
   >;
 
@@ -62,17 +38,25 @@ export class UserRepository extends DefaultCrudRepository<
     protected userCredentialsRepositoryGetter: Getter<
       UserCredentialsRepository
     >,
+    @repository.getter('RoleRepository')
+    protected roleRepositoryGetter: Getter<
+      RoleRepository
+    >,
   ) {
     super(UserModel, dataSource);
     this.userCredentials = this.createHasOneRepositoryFactoryFor(
       'userCredentials',
       userCredentialsRepositoryGetter,
     );
+    this.roles = this.createHasManyRepositoryFactoryFor(
+      'roleModel',
+      roleRepositoryGetter,
+    );
   }
 
   async findCredentials(
     userId: typeof UserModel.prototype.id,
-  ): Promise<UserCredentials | undefined> {
+  ): Promise<UserCredentialsModel | undefined> {
     try {
       return await this.userCredentials(userId).get();
     } catch (err) {

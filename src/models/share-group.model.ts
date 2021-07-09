@@ -12,20 +12,20 @@ import {MongoQueryableModel} from '.';
 export class ShareGroup extends MongoQueryableModel {
   @property({
     type: 'string',
-    description: group short name id,
+    description: "group short name id",
   })
   groupID?: string;
 
   @property({
     type: 'array',
-    description: Defines the emails of users that data is shared to,
+    description: "Defines the emails of users that data is shared with",
     itemType: 'string',
   })
   members?: string[];
 
   @property({
     type: 'array',
-    description: Defines the datasets which are shared,
+    description: "Defines the datasets which are shared",
     itemType: 'string',
   })
   datasets?: string[];

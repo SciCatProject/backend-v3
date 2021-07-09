@@ -1,8 +1,12 @@
 import {Entity, model, property} from '@loopback/repository';
 import { now } from 'moment-timezone';
 
-@model({settings: {strict: false}})
-export class Role extends Entity {
+@model({
+  settings: {
+    strict: false
+  }
+})
+export class RoleModel extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -41,13 +45,13 @@ export class Role extends Entity {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
 
-  constructor(data?: Partial<Role>) {
+  constructor(data?: Partial<RoleModel>) {
     super(data);
   }
 }
 
-export interface RoleRelations {
+export interface RoleModelRelations {
   // describe navigational properties here
 }
 
-export type RoleWithRelations = Role & RoleRelations;
+export type RoleWithRelations = RoleModel & RoleModelRelations;

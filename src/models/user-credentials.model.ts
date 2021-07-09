@@ -7,7 +7,7 @@ import {UserModel} from './user.model'
 
 import { userInfo } from 'os';
 @model()
-export class UserCredentials extends Entity {
+export class UserCredentialsModel extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -28,14 +28,14 @@ export class UserCredentials extends Entity {
   })
   userId: string;
 
-  constructor(data?: Partial<UserCredentials>) {
+  constructor(data?: Partial<UserCredentialsModel>) {
     super(data);
   }
 }
 
-export interface UserCredentialsRelations {
+export interface UserCredentialsModelRelations {
   // describe navigational properties here
 }
 
-export type UserCredentialsWithRelations = UserCredentials &
-  UserCredentialsRelations;
+export type UserCredentialsWithRelations = UserCredentialsModel &
+  UserCredentialsModelRelations;

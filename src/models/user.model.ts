@@ -1,5 +1,6 @@
-import {Entity, model, property, hasOne} from '@loopback/repository';
-import {UserCredentials} from './user-credentials.model';
+import {Entity, model, property, hasOne, hasMany} from '@loopback/repository';
+import {UserCredentialsModel} from './user-credentials.model';
+import {RoleModel} from './role.model';
 
 
 export type Credentials = {
@@ -60,8 +61,11 @@ export class UserModel extends Entity {
   })
   verificationToken?: string;
 
-  @hasOne(() => UserCredentials)
-  userCredentials: UserCredentials;
+  @hasOne(() => UserCredentialsModel)
+  userCredentials: UserCredentialsModel;
+
+  @hasMany(() => RoleModel)
+  userRoles: RoleModel
 
   // Define well-known properties here
 
