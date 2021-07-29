@@ -348,9 +348,8 @@ exports.sendMail = (to, cc, subjectText, mailText, e, next) => {
 
 exports.convertToSI = (value, unit) => {
   try {
-    const quantity = math.unit(value, unit).toSI().toString();
-    const [convertedValue, convertedUnit] = quantity.split(" ");
-    return { valueSI: Number(convertedValue), unitSI: convertedUnit };
+    const quantity = math.unit(value, unit).toSI().toJSON();
+    return { valueSI: Number(quantity.value), unitSI: quantity.unit };
   } catch (error) {
     console.log(error);
     return { valueSI: value, unitSI: unit };
@@ -390,7 +389,7 @@ exports.appendSIUnitToPhysicalQuantity = (object) => {
 };
 /**Check if input is object or a physical quantity */
 const isObject = (x) => {
-  if(x && typeof x === "object" && (!Array.isArray(x) && (!x.unit && x.unit !== "") && (!x.u && x.u !== ""))){
+  if(x && typeof x === "object" && (!Array.isArray(x) && (!x.unit && x.unit !== "")&& (!x.u && x.u !== ""))){
     return true;
   }
   return false;
