@@ -371,11 +371,11 @@ exports.convertToRequestedUnit = (value, currentUnit, requestedUnit) => {
 exports.appendSIUnitToPhysicalQuantity = (object) => {
   Object.keys(object).forEach((key) => {
     const value = object[key];
-    if (value && value.unit) {
+    if (value && (value.unit || value.u)) {
       const {
         valueSI,
         unitSI
-      } = exports.convertToSI(value.value, value.unit);
+      } = exports.convertToSI(value.value || value.v, value.unit || value.u);
       object[key] = {
         ...value,
         valueSI,
@@ -390,7 +390,7 @@ exports.appendSIUnitToPhysicalQuantity = (object) => {
 };
 /**Check if input is object or a physical quantity */
 const isObject = (x) => {
-  if(x && typeof x === "object" && (!Array.isArray(x) && (!x.unit && x.unit !== ""))){
+  if(x && typeof x === "object" && (!Array.isArray(x) && (!x.unit && x.unit !== "") && (!x.u && x.u !== ""))){
     return true;
   }
   return false;
