@@ -1,17 +1,39 @@
 {
-  "name": "catamel-expressjs",
-  "version": "0.0.0",
-  "private": true,
+  "name": "catamel",
+  "version": "1.0.0",
+  "description": "Exploration to migrate Scicat catamel to pure express.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node ./bin/www"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --project ./",
+    "start": "tsc && node --unhandled-rejections=strict ./dist/index.js",
+    "debug": "export DEBUG=* && npm run start"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SciCatProject/catamel.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SciCatProject/catamel/issues"
+  },
+  "homepage": "https://github.com/SciCatProject/catamel#readme",
   "dependencies": {
-    "cookie-parser": "~1.4.4",
-    "debug": "~2.6.9",
-    "express": "~4.16.1",
-    "http-errors": "~1.6.3",
-    "jade": "~1.11.0",
-    "mongoose": "^5.13.3",
-    "morgan": "~1.9.1"
+    "cors": "^2.8.5",
+    "debug": "^4.3.2",
+    "express": "^4.17.1",
+    "express-winston": "^4.1.0",
+    "mongoose": "^5.13.4",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/debug": "^4.1.7",
+    "@types/express": "^4.17.13",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^10.1.0",
+    "tslint": "^6.1.3",
+    "typescript": "^4.3.5"
   }
 }
