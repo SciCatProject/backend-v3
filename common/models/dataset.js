@@ -151,18 +151,6 @@ module.exports = function(Dataset) {
     next();
   });
 
-  Dataset.beforeRemote("prototype.patchAttributes", function (
-    ctx,
-    unused,
-    next
-  ) {
-    if ("scientificMetadata" in ctx.args.data) {
-      const { scientificMetadata } = ctx.args.data;
-      utils.appendSIUnitToPhysicalQuantity(scientificMetadata);
-    }
-    next();
-  });
-
   Dataset.afterRemote("fullquery", function (ctx, someCollections, next) {
     if (ctx.args.fields.scientific) {
       const {
@@ -422,6 +410,12 @@ module.exports = function(Dataset) {
           );
         }
       });
+
+      // convert scientificMetadata value to SI
+      if (ctx.instance.scientificMetadata) {
+        const { scientificMetadata } = ctx.instance;
+        utils.appendSIUnitToPhysicalQuantity(scientificMetadata);
+      }
     } else {
       // update case
       utils.keepHistory(ctx, next);

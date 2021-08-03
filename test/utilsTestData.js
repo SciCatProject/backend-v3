@@ -27,6 +27,10 @@ const testData = {
       "phiy": {
         "value": 0.21792454481296603,
         "unit": "deg"
+      },
+      "en": {
+        "v": 9998,
+        "u": "eV"
       }
     },
     "take_snapshots": 1,
@@ -233,6 +237,12 @@ const appendSIUnitToPhysicalQuantityExpectedData = {
       "unit": "deg",
       "valueSI": 0.0038035008278961874,
       "unitSI": "rad"
+    },
+    "en": {
+      "v": 9998,
+      "u": "eV",
+      "valueSI": 1.601856129687e-15,
+      "unitSI": "(kg m^2) / s^2"
     }
   },
   "take_snapshots": 1,
@@ -433,6 +443,7 @@ const extractMetadataKeysExpectedData = [
   "motors.focus",
   "motors.phiz",
   "motors.phiy",
+  "motors.en",
   "take_snapshots",
   "shape",
   "in_interleave",
