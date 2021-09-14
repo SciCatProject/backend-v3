@@ -162,7 +162,7 @@ module.exports = function (app) {
                                     u.profile.username;
               ctx.args.options.currentUserEmail =
                                     u.profile.email;
-              groups = u.profile.accessGroups;
+              groups = u.profile.accessGroups.concat(u.externalId);
               // check if a normal user or an internal ROLE
               if (typeof groups === "undefined") {
                 groups = [];
