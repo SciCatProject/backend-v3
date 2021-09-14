@@ -190,6 +190,13 @@ module.exports = function (MongoQueryableModel) {
                     "accessGroups",
                     fields["userGroups"]
                   )
+                },
+                {
+                  sharedWith: searchExpression(
+                    modelName,
+                    "sharedWith",
+                    fields["userGroups"]
+                  )
                 }
                 ]
               }
@@ -434,6 +441,13 @@ module.exports = function (MongoQueryableModel) {
                   accessGroups: searchExpression(
                     modelName,
                     "accessGroups",
+                    fields["userGroups"]
+                  )
+                },
+                {
+                  sharedWith: searchExpression(
+                    modelName,
+                    "sharedWith",
                     fields["userGroups"]
                   )
                 }
