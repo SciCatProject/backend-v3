@@ -5,11 +5,6 @@ const kafka = require("kafka-node");
 var config = require("../../server/config.local");
 var p = require("../../package.json");
 var utils = require("./utils");
-var dsl = require("./dataset-lifecycle.json");
-var ds = require("./dataset.json");
-var dsr = require("./raw-dataset.json");
-var dsd = require("./derived-dataset.json");
-var own = require("./ownable.json");
 const lodash = require("lodash");
 const logger = require("../logger");
 // TODO Feature  Add delete functionality for dataset, which removes Dataset and all linked data:
