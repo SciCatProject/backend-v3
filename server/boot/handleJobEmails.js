@@ -1,0 +1,214 @@
+"use strict";
+const fs = require("fs");
+const config = require("../config.local");
+const utils = require("../../common/models/utils");
+const Handlerbars = require("handlebars");
+module.exports = (app) => {
+
+  const Job = app.models.Job;
+  const jobTypes = Job.types;
+  const Dataset = app.models.Dataset;
+  const domainName = process.env.HOST;
+  const jobEventEmitter = Job.eventEmitter;
+  const markDatasetsAsScheduled = async (ids, jobType) => {
+    const statusMessage = { retrieve: "scheduledForRetrieval", archive: "scheduledForArchiving", copy: "scheduledForCopying" };
+    const Dataset = app.models.Dataset;
+    const filter = {
+      pid: {
+        inq: ids
+      }
+    };
+    switch (jobType) {
+    case jobTypes.ARCHIVE: //Intentional fall through
+    case jobTypes.RETRIEVE: {
+      const values = {
+        "$set": {
+          "datasetlifecycle.archivable": false,
+          "datasetlifecycle.retrievable": false,
+          [`datasetlifecycle.${jobType}StatusMessage`]: statusMessage[jobType]
+        }
+      };
+      await Dataset.updateAll(filter, values);
+    }
+      break;
+    default:
+      break;
+    }
+  };
+  const getPolicy = async (ctx, id) => {
+    const Policy = app.models.Policy;
+    try {
+      const dataset = await Dataset.findOne(ctx, { where: { pid: id } });
+      const policy = await Policy.findOne({ where: { ownerGroup: dataset.ownerGroup } }, ctx.options);
+      if (policy) {
+        return policy;
+      } else {
+        console.log("No policy found for dataset with id:", id);
+        console.log("Return default policy instead.");
+        // this should not happen anymore, but kept as additional safety belt
+        let po = {};
+        po.archiveEmailNotification = true;
+        po.retrieveEmailNotification = true;
+        po.archiveEmailsToBeNotified = [];
+        po.retrieveEmailsToBeNotified = [];
+        return po;
+      }
+    } catch (e) {
+      const msg = "Error when looking for Policy of pgroup " + e;
+      console.log("Dataset ID: ", id);
+      console.log(msg);
+    }
+  };
+
+  // Render email template with email context and send it
+  const sendEmail = (to, cc, emailContext) => {
+    const htmlTemplate = fs.readFileSync("email-templates/job-tempate.html", "utf-8");
+    const emailTemplate = Handlerbars.compile(htmlTemplate);
+    const email = emailTemplate(emailContext);
+    const subject = emailContext.subject;
+    console.log(JSON.stringify(emailContext));
+    utils.sendMail(to, cc, subject, null, null, null, email);
+  };
+
+  // Check policy settings if mail should be sent
+  const applyPolicyAndSendEmail = (jobType, policy, emailContext, to, cc = "") => {
+    const { failure } = emailContext;
+    switch (jobType) {
+    case jobTypes.ARCHIVE: {
+      const { archiveEmailNotification, archiveEmailsToBeNotified } = policy;
+      if (archiveEmailsToBeNotified) {
+        to += "," + archiveEmailsToBeNotified.join();
+      }
+      // Always notify at failure
+      if (archiveEmailNotification || failure) {
+        sendEmail(to, cc, emailContext);
+      }
+    }
+
+      break;
+    case jobTypes.RETRIEVE: {
+      const { retrieveEmailNotification, retrieveEmailsToBeNotified } = policy;
+      if (retrieveEmailNotification) {
+        to += "," + retrieveEmailsToBeNotified.join();
+      }
+      // Always notify at failure
+      if (retrieveEmailNotification || failure) {
+        sendEmail(to, cc, emailContext);
+      }
+    }
+      break;
+    default:
+      // For other jobs like reset job
+      sendEmail(to, cc, emailContext);
+      break;
+    }
+  };
+    // Populate email context for job submission notification
+  const sendStartJobEmail = async (ctx) => {
+    const ids = ctx.instance.datasetList.map(x => x.pid);
+    const to = ctx.instance.emailJobInitiator;
+    const jobType = ctx.instance.type;
+    markDatasetsAsScheduled(ids, jobType);
+    const filter = {
+      fields: {
+        "pid": true,
+        "sourceFolder": true,
+        "size": true,
+        "datasetlifecycle": true,
+        "ownerGroup": true
+      },
+      where: {
+        pid: {
+          inq: ids
+        }
+      }
+    };
+    const jobData = ["archive", "retrieve"].includes(jobType) ? (await Dataset.find(filter, ctx.options)).map(x => ({
+      pid: x.pid,
+      ownerGroup: x.ownerGroup,
+      sourceFolder: x.sourceFolder,
+      size: x.size,
+      archivable: x.datasetlifecycle.archivable,
+      retrievable: x.datasetlifecycle.retrievable
+    })) : [];
+    const emailContext = {
+      domainName,
+      subject: ` Your ${jobType} job submitted successfully`,
+      jobSubmissionNotification: {
+        jobType,
+        jobData
+      }
+    };
+    const policy = await getPolicy(ctx, ids[0]);
+    applyPolicyAndSendEmail(jobType, policy, emailContext, to);
+
+  };
+    // Populate email context for finished job notification
+  const sendFinishJobEmail = async (ctx) => {
+    const ids = ctx.instance.datasetList.map(x => x.pid);
+    let to = ctx.instance.emailJobInitiator;
+    const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = ctx.instance;
+
+    const additionalMsg = jobType === jobTypes.RETRIEVE ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination" : "";
+    const failure = jobStatusMessage.indexOf("finish") !== -1 && jobStatusMessage.indexOf("finishedSuccessful") == -1;
+    const filter = {
+      fields: {
+        "pid": true,
+        "sourceFolder": true,
+        "size": true,
+        "datasetlifecycle": true,
+        "ownerGroup": true
+      },
+      where: {
+        pid: {
+          inq: ids
+        }
+      }
+    };
+    const datasets = (await Dataset.find(filter, ctx.options)).map(x => ({
+      pid: x.pid,
+      ownerGroup: x.ownerGroup,
+      sourceFolder: x.sourceFolder,
+      size: x.size,
+      archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
+      retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
+      archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
+      retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
+      retrievable: x.datasetlifecycle.retrievable
+    }));
+    // split result into good and bad
+    const good = datasets.filter(function (x) {
+      return x.retrievable;
+    });
+    const bad = datasets.filter(function (x) {
+      return !x.retrievable;
+    });
+    // add cc message in case of failure to scicat archivemanager
+    const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
+    const creationTime = ctx.instance.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
+    const emailContext = {
+      // domainName: baseUrl,
+      subject: ` Your ${jobType} job from ${creationTime} is finished`,
+      jobFinishedNotification: {
+        jobId,
+        jobType,
+        failure,
+        creationTime,
+        jobStatusMessage,
+        jobResultObject: jobResultObject,
+        datasets: {
+          good,
+          bad
+        },
+        additionalMsg
+      }
+    };
+    const policy = await getPolicy(ctx, ctx.instance.id);
+    applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
+  };
+    // Listen to events from Job
+  jobEventEmitter.addListener("jobCreated", sendStartJobEmail);
+  jobEventEmitter.addListener("jobUpdated", sendFinishJobEmail);
+};
+
+
