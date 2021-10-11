@@ -13,8 +13,10 @@ chai.use(chaiHttp);
 var accessTokenIngestor = null;
 var accessTokenArchiveManager = null;
 
-var pid = null;
-var idJob = null;
+var pid1 = null;
+var pid2 = null;
+var archiveJobId = null;
+var retrieveJobId = null;
 
 var testraw = {
   "principalInvestigator": "bertram.astor@grumble.com",
@@ -95,6 +97,9 @@ var testArchiveJob = {
   "datasetList": [{
     "pid": "dummy",
     "files": []
+  },{
+    "pid": "dummy",
+    "files": []
   }],
   "jobResultObject": {
     "status": "okay",
@@ -110,13 +115,22 @@ var testRetrieveJob = {
   "datasetList": [{
     "pid": "dummy",
     "files": []
-  }],
+  },
+  {
+    "pid": "dummy",
+    "files": []
+  }
+  ],
   "jobResultObject": {
     "status": "okay",
     "message": "All systems okay"
   }
 };
-
+before(function(done) {
+  app = require("../server/server");
+  console.log("Waiting for 5 seconds for boot tasks to finish: ",new Date());
+  setTimeout(done,5000);
+});
 var app;
 before(function () {
   app = require("../server/server");
@@ -158,7 +172,28 @@ describe("Test New Job Model", () => {
         var pidtest = res.body["pid"];
         testArchiveJob.datasetList[0].pid = pidtest;
         testRetrieveJob.datasetList[0].pid = pidtest;
-        pid = encodeURIComponent(res.body["pid"]);
+        pid1 = encodeURIComponent(res.body["pid"]);
+        done();
+      });
+  });
+  it("adds another new raw dataset", function (done) {
+    request(app)
+      .post("/api/v3/RawDatasets?access_token=" + accessTokenIngestor)
+      .send(testraw)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("owner").and.be.string;
+        res.body.should.have.property("type").and.equal("raw");
+        res.body.should.have.property("pid").and.be.string;
+        // store link to this dataset in datablocks
+        var pidtest = res.body["pid"];
+        testArchiveJob.datasetList[1].pid = pidtest;
+        testRetrieveJob.datasetList[1].pid = pidtest;
+        pid2 = encodeURIComponent(res.body["pid"]);
         done();
       });
   });
@@ -174,24 +209,68 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         res.body.should.have.property("type").and.be.string;
-        idJob = res.body["id"];
+        archiveJobId = res.body["id"];
+        done();
+      });
+  });
+  it("Adds a new archive job request contains empty datasetList, which should fail", function (done) {
+    const empty = { ...testArchiveJob };
+    empty.datasetList = [];
+    request(app)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(empty)
+      .set("Accept", "application/json")
+      .expect(404)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        res.body.should.have.property("error");
         done();
       });
   });
 
-  it("Check if dataset was updated by job request", function (done) {
+  it("Adds a new archive job request on non exist dataset which should fail", function (done) {
+    let nonExistDataset = { ...testArchiveJob };
+    nonExistDataset.datasetList[0].pid = "non";
+    console.log(nonExistDataset);
     request(app)
-      .get("/api/v3/Datasets/" + pid + "?access_token=" + accessTokenIngestor)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(nonExistDataset)
+      .set("Accept", "application/json")
+      .expect(404)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        res.body.should.have.property("error");
+        done();
+      });
+  });
+  it("Check if two datasets was updated by job request", function (done) {
+    request(app)
+      .get("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenIngestor)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
       .end((err, res) => {
         if (err)
           return done(err);
+        res.body.should.have.nested.property("datasetlifecycle.archivable").and.equal(false);
+        res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(false);
         res.body.should.have.nested.property("datasetlifecycle.archiveStatusMessage").and.equal("scheduledForArchiving");
         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
-        done();
       });
+    request(app)
+      .get("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenIngestor)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        res.body.should.have.nested.property("datasetlifecycle.archivable").and.equal(false);
+        res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(false);
+        res.body.should.have.nested.property("datasetlifecycle.archiveStatusMessage").and.equal("scheduledForArchiving");
+        res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+      });
+    done();
   });
 
 
@@ -210,7 +289,7 @@ describe("Test New Job Model", () => {
 
   it("Send an update status to the dataset, simulating the archive system response", function (done) {
     request(app)
-      .put("/api/v3/Datasets/" + pid + "?access_token=" + accessTokenArchiveManager)
+      .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
       .send({
         "datasetlifecycle": {
           "retrievable": true,
@@ -225,9 +304,27 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
-        done();
       });
+    request(app)
+      .put("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenArchiveManager)
+      .send({
+        "datasetlifecycle": {
+          "retrievable": true,
+          "archiveStatusMessage": "datasetOnArchiveDisk"
+        },
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
+        res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+      });
+    done();
   });
+
   // change policy to suppress emails
 
   it("Disable notification bt email", function (done) {
@@ -250,12 +347,23 @@ describe("Test New Job Model", () => {
       });
   });
 
-
+  it("Adds a new archive job request for same data which should fail", function (done) {
+    request(app)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(testArchiveJob)
+      .set("Accept", "application/json")
+      .expect(409)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        res.body.should.have.property("error");
+        done();
+      });
+  });
 
 
   it("Send an update status to the archive job request, signal successful archiving", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + idJob + "?access_token=" + accessTokenArchiveManager)
+      .put("/api/v3/Jobs/" + archiveJobId + "?access_token=" + accessTokenArchiveManager)
       .send({
         "jobStatusMessage": "finishedSuccessful",
         "jobResultObject": {
@@ -274,18 +382,7 @@ describe("Test New Job Model", () => {
   });
 
 
-  it("Adds a new archive job request for same data which should fail", function (done) {
-    request(app)
-      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testArchiveJob)
-      .set("Accept", "application/json")
-      .expect(409)
-      .expect("Content-Type", /json/)
-      .end((err, res) => {
-        res.body.should.have.property("error");
-        done();
-      });
-  });
+
 
   it("Adds a new retrieve job request on same dataset, which should  succeed now", function (done) {
     request(app)
@@ -296,13 +393,14 @@ describe("Test New Job Model", () => {
       .expect("Content-Type", /json/)
       .end((err, res) => {
         res.body.should.have.property("id");
+        retrieveJobId = res.body["id"];
         done();
       });
   });
 
   it("Send an update status to the dataset", function (done) {
     request(app)
-      .put("/api/v3/Datasets/" + pid + "?access_token=" + accessTokenArchiveManager)
+      .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
       .send({
         "datasetlifecycle": {
           "archiveReturnMessage": {
@@ -324,10 +422,9 @@ describe("Test New Job Model", () => {
       });
   });
 
-
   it("Send an update status message to the Job", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + idJob + "?access_token=" + accessTokenIngestor)
+      .put("/api/v3/Jobs/" + retrieveJobId + "?access_token=" + accessTokenIngestor)
       .send({
         "jobStatusMessage": "finishedUnsuccessful",
         "jobResultObject": {
@@ -347,11 +444,9 @@ describe("Test New Job Model", () => {
       });
   });
 
-
-
   it("Send an update status message to the Job", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + idJob + "?access_token=" + accessTokenIngestor)
+      .put("/api/v3/Jobs/" + archiveJobId + "?access_token=" + accessTokenIngestor)
       .send({
         "jobStatusMessage": "finishedSuccessful",
         "jobResultObject": {
@@ -370,9 +465,22 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("should delete the Job", function (done) {
+  it("should delete the archive Job", function (done) {
     request(app)
-      .delete("/api/v3/Jobs/" + idJob + "?access_token=" + accessTokenArchiveManager)
+      .delete("/api/v3/Jobs/" + archiveJobId + "?access_token=" + accessTokenArchiveManager)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, _res) => {
+        if (err)
+          return done(err);
+        done();
+      });
+  });
+
+  it("should delete the retrieve Job", function (done) {
+    request(app)
+      .delete("/api/v3/Jobs/" + retrieveJobId + "?access_token=" + accessTokenArchiveManager)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
@@ -385,7 +493,19 @@ describe("Test New Job Model", () => {
 
   it("should delete the newly created dataset", function (done) {
     request(app)
-      .delete("/api/v3/Datasets/" + pid + "?access_token=" + accessTokenArchiveManager)
+      .delete("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, _res) => {
+        if (err)
+          return done(err);
+        done();
+      });
+  });
+  it("should delete the second newly created dataset", function (done) {
+    request(app)
+      .delete("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenArchiveManager)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)

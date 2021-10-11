@@ -33,10 +33,10 @@ module.exports = function (Job) {
   };
 
   /**
-   * Check that all dataset exists
-   * @param {context} ctx
-   * @param {List of dataset id} ids
-   */
+     * Check that all dataset exists
+     * @param {context} ctx
+     * @param {List of dataset id} ids
+     */
   const checkDatasetsExistance = async (ctx, ids) => {
     const Dataset = app.models.Dataset;
     const e = new Error();
@@ -63,14 +63,16 @@ module.exports = function (Job) {
   };
 
   /**
-   * Check that datasets if in state which the job can be performed
-   * For retrieve jobs all datasets must be in state retrievable
-   * For archive jobs all datasets must be in state archivevable
-   * For copy jobs no need to check only need to filter out datasets that have already been copied when submitting to job queue
-   * ownerGroup is tested implicitly via Ownable
-  */
+     * Check that datasets if in state which the job can be performed
+     * For retrieve jobs all datasets must be in state retrievable
+     * For archive jobs all datasets must be in state archivevable
+     * For copy jobs no need to check only need to filter out datasets that have already been copied when submitting to job queue
+     * ownerGroup is tested implicitly via Ownable
+    */
   const checkDatasetsState = async (ctx, type, ids) => {
     const Dataset = app.models.Dataset;
+    let e = new Error();
+    e.statusCode = 409;
     switch (type) {
     case Job.types.RETRIEVE: //Intentional fall through
     case Job.types.ARCHIVE: {
@@ -87,9 +89,26 @@ module.exports = function (Job) {
       };
       const result = await Dataset.find(filter, ctx.options);
       if (result.length > 0) {
-        var e = new Error();
-        e.statusCode = 409;
         e.message = `The following datasets are not in ${Job.datasetStates[type]} state - no ${type} job sent:\n` + JSON.stringify(result);
+        throw e;
+      }
+    }
+      break;
+    case Job.types.COPY: {
+      const filter = {
+        fields: {
+          "pid": true
+        },
+        where: {
+          "datasetlifecycle.copyable": true,
+          pid: {
+            inq: ids
+          }
+        }
+      };
+      const result = await Dataset.find(filter, ctx.options);
+      if (result.length == 0) {
+        e.message = "All datasets are already copied or sheduled for copying - no copy job sent";
         throw e;
       }
     }
@@ -104,14 +123,10 @@ module.exports = function (Job) {
   /**
    * Validate if the job is performable
    */
-  const validateJob = async (ctx, next) => {
+  const validateJob = async (ctx) => {
     const ids = ctx.instance.datasetList.map(x => x.pid);
-    try {
-      await checkDatasetsExistance(ctx, ids);
-      await checkDatasetsState(ctx, ctx.instance.type, ids);
-    } catch (e) {
-      next(e);
-    }
+    await checkDatasetsExistance(ctx, ids);
+    await checkDatasetsState(ctx, ctx.instance.type, ids);
   };
 
   // Attach job submission to Kafka
@@ -135,9 +150,7 @@ module.exports = function (Job) {
     }
     // Save current data of the instance
     if (!ctx.isNewInstance) {
-      if (ctx.currentInstance) {
-        ctx.hookState.oldData = [ctx.currentInstance];
-      } else if (ctx.where) {
+      if (ctx.where) {
         ctx.hookState.oldData = await ctx.Model.find({ where: ctx.where }).catch(e => e);
       } else {
         ctx.hookState.oldData = [await ctx.Model.findById(ctx.instance.id).catch(e => e)];

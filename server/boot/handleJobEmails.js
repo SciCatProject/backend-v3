@@ -66,7 +66,6 @@ module.exports = (app) => {
     const emailTemplate = Handlerbars.compile(htmlTemplate);
     const email = emailTemplate(emailContext);
     const subject = emailContext.subject;
-    console.log(JSON.stringify(emailContext));
     utils.sendMail(to, cc, subject, null, null, null, email);
   };
 
@@ -108,7 +107,7 @@ module.exports = (app) => {
     const ids = ctx.instance.datasetList.map(x => x.pid);
     const to = ctx.instance.emailJobInitiator;
     const jobType = ctx.instance.type;
-    markDatasetsAsScheduled(ids, jobType);
+    await markDatasetsAsScheduled(ids, jobType);
     const filter = {
       fields: {
         "pid": true,
@@ -135,6 +134,7 @@ module.exports = (app) => {
       domainName,
       subject: ` Your ${jobType} job submitted successfully`,
       jobSubmissionNotification: {
+        jobId: ctx.instance.id,
         jobType,
         jobData
       }
@@ -145,66 +145,74 @@ module.exports = (app) => {
   };
     // Populate email context for finished job notification
   const sendFinishJobEmail = async (ctx) => {
-    const ids = ctx.instance.datasetList.map(x => x.pid);
-    let to = ctx.instance.emailJobInitiator;
-    const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = ctx.instance;
+    // Iterate through list of jobs that was updated
+    // Put can update one instance and update can update multiple job instances
+    ctx.hookState.oldData.forEach( async(oldData) => {
+      const currentData = await Job.findById(oldData.id, ctx.options);
+      //Check that statysMessage has changed
+      if (currentData.jobStatusMessage != oldData.jobStatusMessage) {
+        const ids = currentData.datasetList.map(x => x.pid);
+        let to = currentData.emailJobInitiator;
+        const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentData;
 
-    const additionalMsg = jobType === jobTypes.RETRIEVE ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination" : "";
-    const failure = jobStatusMessage.indexOf("finish") !== -1 && jobStatusMessage.indexOf("finishedSuccessful") == -1;
-    const filter = {
-      fields: {
-        "pid": true,
-        "sourceFolder": true,
-        "size": true,
-        "datasetlifecycle": true,
-        "ownerGroup": true
-      },
-      where: {
-        pid: {
-          inq: ids
-        }
+        const failure = jobStatusMessage.indexOf("finish") !== -1 && jobStatusMessage.indexOf("finishedSuccessful") == -1;
+        const filter = {
+          fields: {
+            "pid": true,
+            "sourceFolder": true,
+            "size": true,
+            "datasetlifecycle": true,
+            "ownerGroup": true
+          },
+          where: {
+            pid: {
+              inq: ids
+            }
+          }
+        };
+        const datasets = (await Dataset.find(filter, ctx.options)).map(x => ({
+          pid: x.pid,
+          ownerGroup: x.ownerGroup,
+          sourceFolder: x.sourceFolder,
+          size: x.size,
+          archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
+          retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
+          archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
+          retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
+          retrievable: x.datasetlifecycle.retrievable
+        }));
+        // split result into good and bad
+        const good = datasets.filter(function (x) {
+          return x.retrievable;
+        });
+        const bad = datasets.filter(function (x) {
+          return !x.retrievable;
+        });
+        // add cc message in case of failure to scicat archivemanager
+        const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
+        const creationTime = ctx.instance.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
+        const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination" : "";
+        const emailContext = {
+          // domainName: baseUrl,
+          subject: ` Your ${jobType} job from ${creationTime} is finished ${failure? "with failure": "successfully"}`,
+          jobFinishedNotification: {
+            jobId,
+            jobType,
+            failure,
+            creationTime,
+            jobStatusMessage,
+            jobResultObject: jobResultObject,
+            datasets: {
+              good,
+              bad
+            },
+            additionalMsg
+          }
+        };
+        const policy = await getPolicy(ctx, ids[0]);
+        applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
       }
-    };
-    const datasets = (await Dataset.find(filter, ctx.options)).map(x => ({
-      pid: x.pid,
-      ownerGroup: x.ownerGroup,
-      sourceFolder: x.sourceFolder,
-      size: x.size,
-      archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
-      retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
-      archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
-      retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
-      retrievable: x.datasetlifecycle.retrievable
-    }));
-    // split result into good and bad
-    const good = datasets.filter(function (x) {
-      return x.retrievable;
     });
-    const bad = datasets.filter(function (x) {
-      return !x.retrievable;
-    });
-    // add cc message in case of failure to scicat archivemanager
-    const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
-    const creationTime = ctx.instance.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
-    const emailContext = {
-      // domainName: baseUrl,
-      subject: ` Your ${jobType} job from ${creationTime} is finished`,
-      jobFinishedNotification: {
-        jobId,
-        jobType,
-        failure,
-        creationTime,
-        jobStatusMessage,
-        jobResultObject: jobResultObject,
-        datasets: {
-          good,
-          bad
-        },
-        additionalMsg
-      }
-    };
-    const policy = await getPolicy(ctx, ctx.instance.id);
-    applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
   };
     // Listen to events from Job
   jobEventEmitter.addListener("jobCreated", sendStartJobEmail);
