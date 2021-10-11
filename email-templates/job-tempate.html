@@ -69,7 +69,7 @@
             You will be notified by email as soon as the job is completed.<br>
         </div>
         {{#if jobData}}
-        <p>Job will be perfomed on the following dataset(s):</p>
+        <b>Job will be perfomed on the following dataset(s):</b>
         <table>
             {{#each jobData}}
             {{#each this}}
@@ -83,6 +83,7 @@
             {{/each}}
         </table>
         {{/if}}
+        <p>{{additionalMsg}}</p>
         {{/with}}
 
         <!-- Template for finished job  Notification -->
@@ -96,7 +97,7 @@
             <p class="error">The job resulted in an error message. Please look at the details below.</p>
             {{/if}}
             {{#if jobResultObject}}
-            <p>The returned Job results details are:</p>
+            <b>The returned Job results details are:</b>
             <table>
                 {{#each jobResultObject}}
                 <tr>
@@ -110,7 +111,7 @@
             {{/if}}
             {{#with datasets}}
                 {{#if bad}}
-                <p>The following datasets were scheduled for {{jobNoun}} but are not in a {{jobAdj}} state:</p>
+                <b>Our system was unable to perform the requested action on following dataset(s):</b>
                 <table>
                     {{#each bad}}
                     {{#each this}}
@@ -125,7 +126,7 @@
                 </table>
                 {{/if}}
                 {{#if good}}
-                <p>The following datasets were succesfully {{jobPassiveVerb}}:</p>
+                <b>The following datasets were successfully processed:</b>
                 <table>
                     {{#each good}}
                     {{#each this}}

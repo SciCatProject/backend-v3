@@ -9,6 +9,10 @@
   },
   "replaceOnPUT": false,
   "properties": {
+    "copyable": {
+        "type": "boolean",
+        "description": "Flag which is true, if dataset is available to be copied and no copy job for this dataset exists yet."
+      },
     "archivable": {
       "type": "boolean",
       "description": "Flag which is true, if dataset is available to be archived and no archive job for this dataset exists yet."
@@ -40,6 +44,10 @@
     "isOnCentralDisk": {
       "type": "boolean",
       "description": "Flag which is true, if full dataset is available on central fileserver. If false data needs to be copied from decentral storage place to  a cache server before the ingest. This information needs to be transferred to the archive system at archive time"
+    },
+    "copyStatusMessage": {
+        "type": "string",
+        "description": "Short string defining current status of Dataset with respect to storage."
     },
     "archiveStatusMessage": {
       "type": "string",
