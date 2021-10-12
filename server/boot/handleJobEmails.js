@@ -11,8 +11,7 @@ module.exports = (app) => {
   const domainName = process.env.HOST;
   const jobEventEmitter = Job.eventEmitter;
   const markDatasetsAsScheduled = async (ids, jobType) => {
-    const statusMessage = { retrieve: "scheduledForRetrieval", archive: "scheduledForArchiving", copy: "scheduledForCopying" };
-    const Dataset = app.models.Dataset;
+    const statusMessage = { retrieve: "scheduledForRetrieval", archive: "scheduledForArchiving" };
     const filter = {
       pid: {
         inq: ids
@@ -78,7 +77,7 @@ module.exports = (app) => {
       if (archiveEmailsToBeNotified) {
         to += "," + archiveEmailsToBeNotified.join();
       }
-      // Always notify at failure
+      // Always notify on failure
       if (archiveEmailNotification || failure) {
         sendEmail(to, cc, emailContext);
       }
@@ -145,8 +144,7 @@ module.exports = (app) => {
   };
     // Populate email context for finished job notification
   const sendFinishJobEmail = async (ctx) => {
-    // Iterate through list of jobs that was updated
-    // Put can update one instance and update can update multiple job instances
+    // Iterate through list of jobs that were updated
     // Iterate in case of bulk update send out email to each job
     ctx.hookState.oldData.forEach( async(oldData) => {
       const currentData = await Job.findById(oldData.id, ctx.options);
@@ -156,7 +154,7 @@ module.exports = (app) => {
         let to = currentData.emailJobInitiator;
         const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentData;
 
-        const failure = (jobStatusMessage.indexOf("finishedSuccessful") === -1);
+        const failure = jobStatusMessage.indexOf("finishedSuccessful") === -1;
         const filter = {
           fields: {
             "pid": true,
@@ -194,7 +192,7 @@ module.exports = (app) => {
         const creationTime = currentData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
         const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination." : "";
         const emailContext = {
-          // domainName: baseUrl,
+          domainName: config.host,
           subject: ` Your ${jobType} job from ${creationTime} is finished ${failure? "with failure": "successfully"}`,
           jobFinishedNotification: {
             jobId,

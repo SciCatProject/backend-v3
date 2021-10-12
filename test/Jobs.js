@@ -226,7 +226,6 @@ describe("Test New Job Model", () => {
   it("Adds a new archive job request on non exist dataset which should fail", function (done) {
     let nonExistDataset = { ...testArchiveJob };
     nonExistDataset.datasetList[0].pid = "non";
-    console.log(nonExistDataset);
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
       .send(nonExistDataset)

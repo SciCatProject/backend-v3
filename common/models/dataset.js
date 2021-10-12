@@ -227,12 +227,10 @@ module.exports = function(Dataset) {
           }
           defaultPolicy.autoArchive = false;
           defaultPolicy.autoArchiveDelay = 7;
-          defaultPolicy.copyEmailNotification = true;
           defaultPolicy.archiveEmailNotification = true;
           defaultPolicy.retrieveEmailNotification = true;
           defaultPolicy.archiveEmailsToBeNotified = [];
           defaultPolicy.retrieveEmailsToBeNotified = [];
-          defaultPolicy.copyEmailsToBeNotified = [];
           defaultPolicy.embargoPeriod = 3;
           Policy.create(defaultPolicy, ctx.options, function(
             err,
@@ -288,8 +286,6 @@ module.exports = function(Dataset) {
           ctx.instance.datasetlifecycle.archivable = true;
         if (!("retrievable" in subblock))
           ctx.instance.datasetlifecycle.retrievable = false;
-        if (!("copyable" in subblock))
-          ctx.instance.datasetlifecycle.copyable = true;
         if (!("publishable" in subblock))
           ctx.instance.datasetlifecycle.publishable = false;
         if (!("isOnCentralDisk" in subblock))
@@ -299,8 +295,6 @@ module.exports = function(Dataset) {
                         "datasetCreated";
         if (!("retrieveStatusMessage" in subblock))
           ctx.instance.datasetlifecycle.retrieveStatusMessage = "";
-        if (!("copyStatusMessage" in subblock))
-          ctx.instance.datasetlifecycle.copyStatusMessage = "";
         if (!("retrieveIntegrityCheck" in subblock))
           ctx.instance.datasetlifecycle.retrieveIntegrityCheck = false;
         // auto fill retention and publishing time
