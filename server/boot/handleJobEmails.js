@@ -38,7 +38,7 @@ module.exports = (app) => {
   const getPolicy = async (ctx, id) => {
     const Policy = app.models.Policy;
     try {
-      const dataset = await Dataset.findOne({ where: { pid: id } }, ctx.options);
+      const dataset = await Dataset.findById(id, ctx.options);
       const policy = await Policy.findOne({ where: { ownerGroup: dataset.ownerGroup } }, ctx.options);
       if (policy) {
         return policy;

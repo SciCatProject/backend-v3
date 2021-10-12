@@ -74,7 +74,7 @@
         <table>
             {{#each jobData}}
             {{#each this}}
-            <tr>
+            <tr {{#if (eq @key "pid")}} style="background-color: lightblue;"{{/if}}>
                 <td class="key">
                     {{keyToWord @key}}
                 </td>
@@ -116,7 +116,7 @@
                 <table>
                     {{#each bad}}
                     {{#each this}}
-                    <tr>
+                    <tr {{#if (eq @key "pid")}} style="background-color: lightblue;"{{/if}}>
                         <td class="key">
                             {{keyToWord @key}}
                         </td>
@@ -131,7 +131,7 @@
                 <table>
                     {{#each good}}
                     {{#each this}}
-                    <tr>
+                    <tr {{#if (eq @key "pid")}} style="background-color: lightblue;"{{/if}}>
                         <td class="key">
                            {{keyToWord @key}}
                         </td>

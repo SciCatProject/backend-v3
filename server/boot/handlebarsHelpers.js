@@ -1,4 +1,5 @@
 "use strict";
+// This file support rendering of email template
 const Handlebars = require("handlebars");
 const unwrapJSON = (json)=> {
   if (typeof json === "boolean") {
@@ -41,4 +42,8 @@ Handlebars.registerHelper("unwrapJSON", (json) => {
 
 Handlebars.registerHelper("keyToWord", (string) => {
   return formatCamelCase(string);
+});
+
+Handlebars.registerHelper("eq", function(a, b) {
+  return a === b;
 });
