@@ -115,14 +115,14 @@ module.exports = function (Job) {
     Job.attachTo(dataSource);
   }
 
-  Job.observe("before save", async (ctx, next) => {
+  Job.observe("before save", async (ctx) => {
     // email job initiator should always be the person running the job
     // therefore override this field both for users and functional accounts
     if (ctx.instance) {
       ctx.instance.emailJobInitiator = ctx.options.currentUserEmail;
       if (ctx.isNewInstance) {
         ctx.instance.jobStatusMessage = "jobSubmitted";
-        await validateJob(ctx, next);
+        await validateJob(ctx);
       }
     }
     // Save current data of the instance

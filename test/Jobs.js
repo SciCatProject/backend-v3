@@ -330,7 +330,8 @@ describe("Test New Job Model", () => {
       .send({
         ownerGroupList: "p10029",
         data: {
-          archiveEmailNotification: false
+          archiveEmailNotification: false,
+          retrieveEmailNotification: false
         }
       })
       .set("Accept", "application/json")
