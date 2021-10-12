@@ -181,12 +181,8 @@ module.exports = (app) => {
           retrievable: x.datasetlifecycle.retrievable
         }));
         // split result into good and bad
-        const good = datasets.filter(function (x) {
-          return x.retrievable;
-        });
-        const bad = datasets.filter(function (x) {
-          return !x.retrievable;
-        });
+        const good = datasets.filter((x) => x.retrievable);
+        const bad = datasets.filter((x) =>  !x.retrievable);
         // add cc message in case of failure to scicat archivemanager
         const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
         const creationTime = currentData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");

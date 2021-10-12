@@ -331,7 +331,6 @@ exports.sendMail = async (to, cc, subjectText, mailText, e, next, html = null) =
       console.log("      Email sent to: ", to);
     } catch (err) {
       console.log(err);
-      return next && next(e);
     }
   }
   return next && next(e);

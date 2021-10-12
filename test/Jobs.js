@@ -237,7 +237,7 @@ describe("Test New Job Model", () => {
         done();
       });
   });
-  it("Check if two datasets was updated by job request", function (done) {
+  it("Check if dataset 1 was updated by job request", function (done) {
     request(app)
       .get("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenIngestor)
       .set("Accept", "application/json")
@@ -250,7 +250,10 @@ describe("Test New Job Model", () => {
         res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(false);
         res.body.should.have.nested.property("datasetlifecycle.archiveStatusMessage").and.equal("scheduledForArchiving");
         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+        done();
       });
+  });
+  it("Check if dataset 2 was updated by job request", function (done) {
     request(app)
       .get("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenIngestor)
       .set("Accept", "application/json")
@@ -301,7 +304,7 @@ describe("Test New Job Model", () => {
         done();
       });
   });
-  it("Send an update status to dataset 1, simulating the archive system response", function (done) {
+  it("Send an update status to dataset 2, simulating the archive system response", function (done) {
     request(app)
       .put("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenArchiveManager)
       .send({
