@@ -97,7 +97,7 @@ var testArchiveJob = {
   "datasetList": [{
     "pid": "dummy",
     "files": []
-  },{
+  }, {
     "pid": "dummy",
     "files": []
   }],
@@ -126,11 +126,6 @@ var testRetrieveJob = {
     "message": "All systems okay"
   }
 };
-before(function(done) {
-  app = require("../server/server");
-  console.log("Waiting for 5 seconds for boot tasks to finish: ",new Date());
-  setTimeout(done,5000);
-});
 var app;
 before(function () {
   app = require("../server/server");
@@ -421,6 +416,27 @@ describe("Test New Job Model", () => {
         done();
       });
   });
+  it("Send an update status to the dataset, simulating the archive system response of finished job with partial failure", function (done) {
+    request(app)
+      .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
+      .send(
+        {
+          "datasetlifecycle": {
+            "retrievable": true,
+            "archiveStatusMessage": "datasetOnArchiveDisk"
+          }
+        })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
+        res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+        done();
+      });
+  });
 
   it("Send an update status message to the Job", function (done) {
     request(app)
@@ -444,9 +460,34 @@ describe("Test New Job Model", () => {
       });
   });
 
+  it("Send an update status to the datasets, simulating the archive system response of successful job", function (done) {
+    var filter = {
+      pid: {
+        inq: [pid1, pid2]
+      }
+    };
+    request(app)
+      .post("/api/v3/Datasets/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+      .send({
+        "datasetlifecycle": {
+          "retrievable": true,
+          "archiveStatusMessage": "datasetOnArchiveDisk"
+        }
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("count").and.equal(2);
+        return done();
+      });
+  });
+
   it("Send an update status message to the Job", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + archiveJobId + "?access_token=" + accessTokenIngestor)
+      .put("/api/v3/Jobs/" + retrieveJobId + "?access_token=" + accessTokenIngestor)
       .send({
         "jobStatusMessage": "finishedSuccessful",
         "jobResultObject": {
@@ -462,6 +503,50 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.property("jobStatusMessage").and.be.string;
         done();
+      });
+  });
+
+  it("Bulk update Job status prepare to trigger sending email mechanism", function (done) {
+    const filter = {
+      id: {
+        inq: [archiveJobId, retrieveJobId]
+      }
+    };
+    request(app)
+      .post("/api/v3/Jobs/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+      .send({
+        "jobStatusMessage": "test",
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("count").and.equal(2);
+        return done();
+      });
+  });
+
+  it("Bulk update Job status, should send out email", function (done) {
+    var filter = {
+      id: {
+        inq: [archiveJobId, retrieveJobId]
+      }
+    };
+    request(app)
+      .post("/api/v3/Jobs/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+      .send({
+        "jobStatusMessage": "finishedSuccessful",
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("count").and.equal(2);
+        return done();
       });
   });
 

@@ -38,7 +38,7 @@ module.exports = (app) => {
   const getPolicy = async (ctx, id) => {
     const Policy = app.models.Policy;
     try {
-      const dataset = await Dataset.findOne(ctx, { where: { pid: id } });
+      const dataset = await Dataset.findOne({ where: { pid: id } }, ctx.options);
       const policy = await Policy.findOne({ where: { ownerGroup: dataset.ownerGroup } }, ctx.options);
       if (policy) {
         return policy;
@@ -147,15 +147,16 @@ module.exports = (app) => {
   const sendFinishJobEmail = async (ctx) => {
     // Iterate through list of jobs that was updated
     // Put can update one instance and update can update multiple job instances
+    // Iterate in case of bulk update send out email to each job
     ctx.hookState.oldData.forEach( async(oldData) => {
       const currentData = await Job.findById(oldData.id, ctx.options);
-      //Check that statysMessage has changed
-      if (currentData.jobStatusMessage != oldData.jobStatusMessage) {
+      //Check that statusMessage has changed. Only run on finished job
+      if (currentData.jobStatusMessage != oldData.jobStatusMessage && currentData.jobStatusMessage.indexOf("finish") !== -1) {
         const ids = currentData.datasetList.map(x => x.pid);
         let to = currentData.emailJobInitiator;
         const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentData;
 
-        const failure = jobStatusMessage.indexOf("finish") !== -1 && jobStatusMessage.indexOf("finishedSuccessful") == -1;
+        const failure = (jobStatusMessage.indexOf("finishedSuccessful") === -1);
         const filter = {
           fields: {
             "pid": true,
@@ -190,8 +191,8 @@ module.exports = (app) => {
         });
         // add cc message in case of failure to scicat archivemanager
         const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
-        const creationTime = ctx.instance.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
-        const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination" : "";
+        const creationTime = currentData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
+        const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination." : "";
         const emailContext = {
           // domainName: baseUrl,
           subject: ` Your ${jobType} job from ${creationTime} is finished ${failure? "with failure": "successfully"}`,
