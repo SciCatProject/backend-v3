@@ -281,7 +281,7 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Send an update status to the dataset, simulating the archive system response", function (done) {
+  it("Send an update status to dataset 1, simulating the archive system response", function (done) {
     request(app)
       .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
       .send({
@@ -298,7 +298,10 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+        done();
       });
+  });
+  it("Send an update status to dataset 1, simulating the archive system response", function (done) {
     request(app)
       .put("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenArchiveManager)
       .send({
@@ -446,7 +449,6 @@ describe("Test New Job Model", () => {
           "status": "bad",
           "message": "System A failed"
         }
-
       })
       .set("Accept", "application/json")
       .expect(200)
