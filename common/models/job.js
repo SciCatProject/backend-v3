@@ -16,12 +16,7 @@ module.exports = function (Job) {
   };
 
   const isEmptyObject = (obj) => {
-    for (var key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        return false;
-      }
-    }
-    return true;
+    return Object.keys(obj).length === 0;
   };
   const publishJob = (job, ctx) => {
     if (config.queue && config.queue === "rabbitmq") {

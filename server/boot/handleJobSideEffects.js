@@ -213,5 +213,3 @@ module.exports = (app) => {
   jobEventEmitter.addListener("jobCreated", sendStartJobEmail);
   jobEventEmitter.addListener("jobUpdated", sendFinishJobEmail);
 };
-
-
