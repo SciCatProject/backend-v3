@@ -208,6 +208,7 @@ describe("Test New Job Model", () => {
         done();
       });
   });
+
   it("Adds a new archive job request contains empty datasetList, which should fail", function (done) {
     const empty = { ...testArchiveJob };
     empty.datasetList = [];
@@ -218,6 +219,9 @@ describe("Test New Job Model", () => {
       .expect(404)
       .expect("Content-Type", /json/)
       .end(function (err, res) {
+        if (err) {
+          return done(err);
+        }
         res.body.should.have.property("error");
         done();
       });
@@ -233,6 +237,9 @@ describe("Test New Job Model", () => {
       .expect(404)
       .expect("Content-Type", /json/)
       .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
         res.body.should.have.property("error");
         done();
       });
@@ -279,6 +286,9 @@ describe("Test New Job Model", () => {
       .expect(409)
       .expect("Content-Type", /json/)
       .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
         res.body.should.have.property("error");
         done();
       });
@@ -356,6 +366,9 @@ describe("Test New Job Model", () => {
       .expect(409)
       .expect("Content-Type", /json/)
       .end((err, res) => {
+        if (err) {
+          return done();
+        }
         res.body.should.have.property("error");
         done();
       });
@@ -393,6 +406,9 @@ describe("Test New Job Model", () => {
       .expect(200)
       .expect("Content-Type", /json/)
       .end((err, res) => {
+        if(err) {
+          return done(err);
+        }
         res.body.should.have.property("id");
         retrieveJobId = res.body["id"];
         done();
@@ -423,27 +439,27 @@ describe("Test New Job Model", () => {
       });
   });
 
-//   it("Send an update status to the dataset, simulating the archive system response of finished job with partial failure", function (done) {
-//     request(app)
-//       .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
-//       .send(
-//         {
-//           "datasetlifecycle": {
-//             "retrievable": true,
-//             "archiveStatusMessage": "datasetOnArchiveDisk"
-//           }
-//         })
-//       .set("Accept", "application/json")
-//       .expect(200)
-//       .expect("Content-Type", /json/)
-//       .end(function (err, res) {
-//         if (err)
-//           return done(err);
-//         res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
-//         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
-//         done();
-//       });
-//   });
+  it("Send an update status to the dataset, simulating the archive system response of finished job with partial failure", function (done) {
+    request(app)
+      .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
+      .send(
+        {
+          "datasetlifecycle": {
+            "retrievable": true,
+            "archiveStatusMessage": "datasetOnArchiveDisk"
+          }
+        })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
+        res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+        done();
+      });
+  });
 
   it("Send an update status message to the Job", function (done) {
     request(app)
@@ -487,7 +503,7 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         res.body.should.have.property("count").and.equal(2);
-        return done();
+        done();
       });
   });
 
