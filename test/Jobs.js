@@ -511,49 +511,49 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Bulk update Job status prepare to trigger sending email mechanism", function (done) {
-    const filter = {
-      id: {
-        inq: [archiveJobId, retrieveJobId]
-      }
-    };
-    request(app)
-      .post("/api/v3/Jobs/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
-      .send({
-        "jobStatusMessage": "test",
-      })
-      .set("Accept", "application/json")
-      .expect(200)
-      .expect("Content-Type", /json/)
-      .end(function (err, res) {
-        if (err)
-          return done(err);
-        res.body.should.have.property("count").and.equal(2);
-        return done();
-      });
-  });
+//   it("Bulk update Job status prepare to trigger sending email mechanism", function (done) {
+//     const filter = {
+//       id: {
+//         inq: [archiveJobId, retrieveJobId]
+//       }
+//     };
+//     request(app)
+//       .post("/api/v3/Jobs/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+//       .send({
+//         "jobStatusMessage": "test",
+//       })
+//       .set("Accept", "application/json")
+//       .expect(200)
+//       .expect("Content-Type", /json/)
+//       .end(function (err, res) {
+//         if (err)
+//           return done(err);
+//         res.body.should.have.property("count").and.equal(2);
+//         return done();
+//       });
+//   });
 
-  it("Bulk update Job status, should send out email", function (done) {
-    var filter = {
-      id: {
-        inq: [archiveJobId, retrieveJobId]
-      }
-    };
-    request(app)
-      .post("/api/v3/Jobs/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
-      .send({
-        "jobStatusMessage": "finishedSuccessful",
-      })
-      .set("Accept", "application/json")
-      .expect(200)
-      .expect("Content-Type", /json/)
-      .end(function (err, res) {
-        if (err)
-          return done(err);
-        res.body.should.have.property("count").and.equal(2);
-        return done();
-      });
-  });
+//   it("Bulk update Job status, should send out email", function (done) {
+//     var filter = {
+//       id: {
+//         inq: [archiveJobId, retrieveJobId]
+//       }
+//     };
+//     request(app)
+//       .post("/api/v3/Jobs/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+//       .send({
+//         "jobStatusMessage": "finishedSuccessful",
+//       })
+//       .set("Accept", "application/json")
+//       .expect(200)
+//       .expect("Content-Type", /json/)
+//       .end(function (err, res) {
+//         if (err)
+//           return done(err);
+//         res.body.should.have.property("count").and.equal(2);
+//         return done();
+//       });
+//   });
 
   it("should delete the archive Job", function (done) {
     request(app)
