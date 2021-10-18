@@ -228,8 +228,10 @@ describe("Test New Job Model", () => {
   });
 
   it("Adds a new archive job request on non exist dataset which should fail", function (done) {
-    let nonExistDataset = { ...testArchiveJob };
-    nonExistDataset.datasetList[0].pid = "non";
+    let nonExistDataset = { ...testArchiveJob, datasetList: [{
+      "pid": "dummy",
+      "files": []
+    }] };
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
       .send(nonExistDataset)
@@ -367,7 +369,7 @@ describe("Test New Job Model", () => {
       .expect("Content-Type", /json/)
       .end((err, res) => {
         if (err) {
-          return done();
+          return done(err);
         }
         res.body.should.have.property("error");
         done();
