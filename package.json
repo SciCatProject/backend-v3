@@ -9,7 +9,7 @@
     "lint": "eslint --fix .",
     "start": "node .",
     "posttest": "eslint .",
-    "test": "./node_modules/mocha/bin/mocha --timeout=30000 --reporter spec --exit",
+    "test": "./node_modules/mocha/bin/mocha --timeout=60000 --reporter spec --exit",
     "snyk-protect": "snyk protect",
     "prepare": "npm run snyk-protect"
   },
