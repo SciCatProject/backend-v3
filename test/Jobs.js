@@ -266,8 +266,8 @@ describe("Test New Job Model", () => {
         res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(false);
         res.body.should.have.nested.property("datasetlifecycle.archiveStatusMessage").and.equal("scheduledForArchiving");
         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+        done();
       });
-    done();
   });
 
 
@@ -321,8 +321,8 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
         res.body.should.have.nested.property("datasetlifecycle.publishable").and.equal(false);
+        done();
       });
-    done();
   });
 
   // change policy to suppress emails
@@ -605,5 +605,4 @@ describe("Test New Job Model", () => {
         done();
       });
   });
-
 });
