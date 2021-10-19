@@ -9,10 +9,12 @@ module.exports = function (Job) {
   Job.datasetStates = {
     retrieve: "retrievable",
     archive: "archivable",
+    copy: "copyable"
   };
   Job.types = {
     RETRIEVE: "retrieve",
     ARCHIVE: "archive",
+    COPY: "copy"
   };
 
   const isEmptyObject = (obj) => {
@@ -59,6 +61,7 @@ module.exports = function (Job) {
      * Check that datasets if in state which the job can be performed
      * For retrieve jobs all datasets must be in state retrievable
      * For archive jobs all datasets must be in state archivevable
+     *      * For copy jobs no need to check only need to filter out datasets that have already been copied when submitting to job queue
      * ownerGroup is tested implicitly via Ownable
     */
   const checkDatasetsState = async (ctx, type, ids) => {
@@ -85,6 +88,26 @@ module.exports = function (Job) {
         throw e;
       }
     }
+      break;
+    case Job.types.COPY: {
+      const filter = {
+        fields: {
+          "pid": true
+        },
+        where: {
+          "datasetlifecycle.copyable": true,
+          pid: {
+            inq: ids
+          }
+        }
+      };
+      const result = await Dataset.find(filter, ctx.options);
+      if (result.length == 0) {
+        e.message = "All datasets are already copied or sheduled for copying - no copy job sent";
+        throw e;
+      }
+    }
+
       break;
     default:
       //Not check other job types
