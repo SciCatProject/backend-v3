@@ -90,7 +90,8 @@
         <!-- Template for finished job  Notification -->
         {{#with jobFinishedNotification}}
         <div>
-            Your {{jobType}} job with id {{ jobId }} is now finished.<br>
+            Your {{jobType}} job is now finished.<br>
+            Job id: {{jobId}}<br>
             {{#if jobStatusMessage}}
             The returned job status is: <b>{{jobStatusMessage}}</b>.<br>
             {{/if}}

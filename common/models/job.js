@@ -8,8 +8,7 @@ module.exports = function (Job) {
   Job.eventEmitter = new EventEmitter();
   Job.datasetStates = {
     retrieve: "retrievable",
-    archive: "archivable",
-    copy: "copyable"
+    archive: "archivable"
   };
   Job.types = {
     RETRIEVE: "retrieve",
@@ -28,10 +27,10 @@ module.exports = function (Job) {
   };
 
   /**
-     * Check that all dataset exists
-     * @param {context} ctx
-     * @param {List of dataset id} ids
-     */
+       * Check that all dataset exists
+       * @param {context} ctx
+       * @param {List of dataset id} ids
+       */
   const checkDatasetsExistance = async (ctx, ids) => {
     const Dataset = app.models.Dataset;
     const e = new Error();
@@ -58,14 +57,15 @@ module.exports = function (Job) {
   };
 
   /**
-     * Check that datasets if in state which the job can be performed
-     * For retrieve jobs all datasets must be in state retrievable
-     * For archive jobs all datasets must be in state archivevable
-     *      * For copy jobs no need to check only need to filter out datasets that have already been copied when submitting to job queue
-     * ownerGroup is tested implicitly via Ownable
-    */
-  const checkDatasetsState = async (ctx, type, ids) => {
+       * Check that datasets is in state which the job can be performed
+       * For retrieve jobs all datasets must be in state retrievable
+       * For archive jobs all datasets must be in state archivevable
+       *      * For copy jobs no need to check only need to filter out datasets that have already been copied when submitting to job queue
+       * ownerGroup is tested implicitly via Ownable
+      */
+  const checkDatasetsState = async (ctx, ids) => {
     const Dataset = app.models.Dataset;
+    const type = ctx.instance.type;
     let e = new Error();
     e.statusCode = 409;
     switch (type) {
@@ -89,39 +89,70 @@ module.exports = function (Job) {
       }
     }
       break;
-    case Job.types.COPY: {
-      const filter = {
-        fields: {
-          "pid": true
-        },
-        where: {
-          "datasetlifecycle.copyable": true,
-          pid: {
-            inq: ids
-          }
-        }
-      };
-      const result = await Dataset.find(filter, ctx.options);
-      if (result.length == 0) {
-        e.message = "All datasets are already copied or sheduled for copying - no copy job sent";
-        throw e;
-      }
-    }
-
-      break;
     default:
       //Not check other job types
       break;
     }
   };
+  const checkFilesExistance = async (ctx) => {
+    const OrigDatablock = app.models.OrigDatablock;
+    let e = new Error();
+    e.statusCode = 404;
+    const datasetsToCheck = ctx.instance.datasetList.filter(x => x.files.length > 0);
+    const ids = datasetsToCheck.map(x => x.pid);
+    switch (ctx.instance.type) {
+    case Job.types.COPY:
+      if (ids.length > 0) {
+        const filter = {
+          fields: {
+            "dataFileList": true,
+            "datasetId": true,
+          },
+          where: {
+            datasetId: {
+              inq: ids
+            }
+          }
+        };
+        // Indexing originDataBlock with pid and create set of files for each dataset
+        const origDatablocks = (await OrigDatablock.find(filter, ctx.options)).reduce((acc, x) => {
+          // Using Set make searching more efficient
+          const files = new Set();
+          x.dataFileList.forEach(file => files.add(file.path));
+          acc[x.datasetId] = files;
+          return acc;
+        }, {});
+        // Get a list of requested files that is not in originDataBlocks
+        const checkResults = datasetsToCheck.reduce((acc, x) => {
+          const pid = x.pid;
+          const referenceFiles = origDatablocks[pid];
+          const nonexistFiles = x.files.filter(f => !referenceFiles.has(f));
+          if (nonexistFiles.length > 0) {
+            acc.push({ pid, nonexistFiles });
+          }
+          return acc;
+        }, []);
 
+        if (checkResults.length > 0) {
+          e.message = "At least one requested file could not be found - no job created:\n`" + JSON.stringify(checkResults);
+          throw e;
+        }
+      }
+      break;
+    default:
+      // Not check for other job
+      break;
+    }
+  };
   /**
-   * Validate if the job is performable
-   */
+     * Validate if the job is performable
+     */
   const validateJob = async (ctx) => {
     const ids = ctx.instance.datasetList.map(x => x.pid);
     await checkDatasetsExistance(ctx, ids);
-    await checkDatasetsState(ctx, ctx.instance.type, ids);
+    await checkDatasetsState(ctx, ids);
+    await checkFilesExistance(ctx, ids);
+
   };
 
   // Attach job submission to Kafka
@@ -136,8 +167,11 @@ module.exports = function (Job) {
   Job.observe("before save", async (ctx) => {
     // email job initiator should always be the person running the job
     // therefore override this field both for users and functional accounts
+    // For copy job requested by anonymous user the emailJobInitiator must remain.
     if (ctx.instance) {
-      ctx.instance.emailJobInitiator = ctx.options.currentUserEmail;
+      if (ctx.instance.type != Job.types.COPY) {
+        ctx.instance.emailJobInitiator = ctx.options.currentUserEmail;
+      }
       if (ctx.isNewInstance) {
         ctx.instance.jobStatusMessage = "jobSubmitted";
         await validateJob(ctx);

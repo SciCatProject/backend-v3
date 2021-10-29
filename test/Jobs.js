@@ -17,7 +17,8 @@ var pid1 = null;
 var pid2 = null;
 var archiveJobId = null;
 var retrieveJobId = null;
-
+var copyJobIds = [];
+var origDatablockId = null;
 var testraw = {
   "principalInvestigator": "bertram.astor@grumble.com",
   "endTime": "2011-09-14T06:31:25.000Z",
@@ -89,6 +90,30 @@ var testraw = {
   "keywords": ["sls", "protein"]
 };
 
+const testOriginDataBlock = {
+  "size": 10,
+  "ownerGroup": "p10029",
+  "accessGroups": [],
+  "datasetId": "dummy",
+  "dataFileList": [
+    {
+      "path": "file1.txt",
+      "size": 2,
+      "time": "2021-10-28T13:34:15.207Z"
+    },
+    {
+      "path": "file2.txt",
+      "size": 3,
+      "time": "2021-10-28T13:34:15.207Z"
+    },
+    {
+      "path": "file3.txt",
+      "size": 4,
+      "time": "2021-10-28T13:34:15.207Z"
+    }
+  ]
+};
+
 
 var testArchiveJob = {
   "emailJobInitiator": "scicatarchivemanger@psi.ch",
@@ -125,6 +150,21 @@ var testRetrieveJob = {
     "status": "okay",
     "message": "All systems okay"
   }
+};
+
+var testCopyJob = {
+  "emailJobInitiator": "scicatarchivemanger@psi.ch",
+  "type": "copy",
+  "jobStatusMessage": "jobSubmitted",
+  "datasetList": [{
+    "pid": "dummy",
+    "files": []
+  },
+  {
+    "pid": "dummy",
+    "files": []
+  }
+  ]
 };
 var app;
 before(function () {
@@ -167,6 +207,8 @@ describe("Test New Job Model", () => {
         var pidtest = res.body["pid"];
         testArchiveJob.datasetList[0].pid = pidtest;
         testRetrieveJob.datasetList[0].pid = pidtest;
+        testCopyJob.datasetList[0].pid = pidtest;
+        testOriginDataBlock.datasetId = pidtest;
         pid1 = encodeURIComponent(res.body["pid"]);
         done();
       });
@@ -188,6 +230,7 @@ describe("Test New Job Model", () => {
         var pidtest = res.body["pid"];
         testArchiveJob.datasetList[1].pid = pidtest;
         testRetrieveJob.datasetList[1].pid = pidtest;
+        testCopyJob.datasetList[1].pid = pidtest;
         pid2 = encodeURIComponent(res.body["pid"]);
         done();
       });
@@ -228,10 +271,12 @@ describe("Test New Job Model", () => {
   });
 
   it("Adds a new archive job request on non exist dataset which should fail", function (done) {
-    let nonExistDataset = { ...testArchiveJob, datasetList: [{
-      "pid": "dummy",
-      "files": []
-    }] };
+    let nonExistDataset = {
+      ...testArchiveJob, datasetList: [{
+        "pid": "dummy",
+        "files": []
+      }]
+    };
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
       .send(nonExistDataset)
@@ -355,7 +400,7 @@ describe("Test New Job Model", () => {
       .end(function (err, res) {
         if (err)
           return done(err);
-        console.log("Result policy update:",res.body);
+        console.log("Result policy update:", res.body);
         done();
       });
   });
@@ -408,7 +453,7 @@ describe("Test New Job Model", () => {
       .expect(200)
       .expect("Content-Type", /json/)
       .end((err, res) => {
-        if(err) {
+        if (err) {
           return done(err);
         }
         res.body.should.have.property("id");
@@ -574,6 +619,142 @@ describe("Test New Job Model", () => {
       });
   });
 
+  it("adds a new origDatablock", function (done) {
+    request(app)
+      .post("/api/v3/OrigDatablocks?access_token=" + accessTokenIngestor)
+      .send(testOriginDataBlock)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("size").and.equal(10);
+        res.body.should.have.property("id").and.be.string;
+        origDatablockId = encodeURIComponent(res.body["id"]);
+        done();
+      });
+  });
+
+  it("Adds a new copy job request", function (done) {
+    request(app)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(testCopyJob)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("type").and.be.string;
+        copyJobIds.push(res.body["id"]);
+
+        done();
+      });
+  });
+
+  it("Send an update status to the copy job request, signal finished job with partial failure", function (done) {
+    request(app)
+      .put("/api/v3/Jobs/" + copyJobIds[0] + "?access_token=" + accessTokenArchiveManager)
+      .send({
+        "jobStatusMessage": "finishedUnsuccessful",
+        "jobResultObject": {
+          "good": [{
+            "pid": pid1,
+            "downloadLink": "Globus link"
+          }],
+          "bad": [{
+            "pid": pid2,
+            "downloadLink": "Globus link",
+            "availableFiles": [{
+              file: "file1.txt",
+              reason: "ok"
+            }, {
+              file: "file2.txt",
+              reason: "ok"
+            }],
+            "unavailableFiles": [{
+              file: "file3.txt",
+              reason: "no space in destination"
+            }],
+          }]
+        }
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, _res) {
+        if (err)
+          return done(err);
+        done();
+      });
+  });
+
+  it("Adds a new copy job request with to copy some selected files", function (done) {
+    testCopyJob.datasetList[0].files = ["file1.txt", "file2.txt"];
+    request(app)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(testCopyJob)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        //reset
+        testCopyJob.datasetList[0].files = [];
+        if (err)
+          return done(err);
+        res.body.should.have.property("type").and.be.string;
+        copyJobIds.push(res.body["id"]);
+        done();
+      });
+  });
+
+  it("Send an update status to the copy job request, signal successful job", function (done) {
+    request(app)
+      .put("/api/v3/Jobs/" + copyJobIds[1] + "?access_token=" + accessTokenArchiveManager)
+      .send({
+        "jobStatusMessage": "finishedUnsuccessful",
+        "jobResultObject": {
+          "good": [{
+            "pid": pid1,
+            "downloadLink": "Globus link 1"
+          },
+          {
+            "pid": pid2,
+            "downloadLink": "Globus link 2"
+          }],
+          "bad": []
+        }
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, _res) {
+        if (err)
+          return done(err);
+        done();
+      });
+  });
+
+  it("Adds a new copy job request with to copy some selected files the dont exist, which should fail", function (done) {
+    testCopyJob.datasetList[0].files = ["file1.txt", "file100.txt"];
+    request(app)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(testCopyJob)
+      .set("Accept", "application/json")
+      .expect(404)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        //reset
+        testCopyJob.datasetList[0].files = [];
+        if (err)
+          return done(err);
+        res.body.should.have.property("error").and.be.string;
+        done();
+      });
+  });
+
+
   it("should delete the archive Job", function (done) {
     request(app)
       .delete("/api/v3/Jobs/" + archiveJobId + "?access_token=" + accessTokenArchiveManager)
@@ -600,6 +781,35 @@ describe("Test New Job Model", () => {
       });
   });
 
+  copyJobIds.forEach(jobId => {
+    it("should delete the copy Job" + jobId, function (done) {
+      request(app)
+        .delete("/api/v3/Jobs/" + jobId + "?access_token=" + accessTokenArchiveManager)
+        .set("Accept", "application/json")
+        .expect(200)
+        .expect("Content-Type", /json/)
+        .end((err, _res) => {
+          if (err)
+            return done(err);
+          done();
+        });
+    });
+  });
+
+  it("should delete the originDataBlock", function (done) {
+    request(app)
+      .delete("/api/v3/OrigDatablocks/" + origDatablockId + "?access_token=" + accessTokenArchiveManager)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, _res) => {
+        if (err)
+          return done(err);
+        done();
+      });
+  });
+
+
   it("should delete the newly created dataset", function (done) {
     request(app)
       .delete("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
@@ -612,6 +822,7 @@ describe("Test New Job Model", () => {
         done();
       });
   });
+
   it("should delete the second newly created dataset", function (done) {
     request(app)
       .delete("/api/v3/Datasets/" + pid2 + "?access_token=" + accessTokenArchiveManager)
