@@ -95,7 +95,7 @@ module.exports = function (Job) {
     }
   };
   const checkFilesExistance = async (ctx) => {
-    const OrigDatablock = app.models.OrigDatablock;
+    const Dataset = app.models.Dataset;
     let e = new Error();
     e.statusCode = 404;
     const datasetsToCheck = ctx.instance.datasetList.filter(x => x.files.length > 0);
@@ -105,27 +105,33 @@ module.exports = function (Job) {
       if (ids.length > 0) {
         const filter = {
           fields: {
-            "dataFileList": true,
+            "pid": true,
             "datasetId": true,
+            "dataFileList":true,
           },
           where: {
-            datasetId: {
+            pid: {
               inq: ids
             }
-          }
+          },
+          include: [{ relation: "origdatablocks" }]
         };
         // Indexing originDataBlock with pid and create set of files for each dataset
-        const origDatablocks = (await OrigDatablock.find(filter, ctx.options)).reduce((acc, x) => {
+        const datasets = (await Dataset.find(filter, ctx.options));
+        const result = datasets.reduce((acc, x) => {
+          const dataset =  x.toJSON();
           // Using Set make searching more efficient
-          const files = new Set();
-          x.dataFileList.forEach(file => files.add(file.path));
-          acc[x.datasetId] = files;
+          const files = dataset.origdatablocks.reduce((acc, block) => {
+            block.dataFileList.forEach(file => {acc.add(file.path);});
+            return acc;
+          }, new Set());
+          acc[dataset.pid] = files;
           return acc;
         }, {});
         // Get a list of requested files that is not in originDataBlocks
         const checkResults = datasetsToCheck.reduce((acc, x) => {
           const pid = x.pid;
-          const referenceFiles = origDatablocks[pid];
+          const referenceFiles = result[pid];
           const nonexistFiles = x.files.filter(f => !referenceFiles.has(f));
           if (nonexistFiles.length > 0) {
             acc.push({ pid, nonexistFiles });
