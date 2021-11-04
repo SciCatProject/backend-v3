@@ -8,12 +8,13 @@ module.exports = function (Job) {
   Job.eventEmitter = new EventEmitter();
   Job.datasetStates = {
     retrieve: "retrievable",
-    archive: "archivable"
+    archive: "archivable",
+    public: "isPublic"
   };
   Job.types = {
     RETRIEVE: "retrieve",
     ARCHIVE: "archive",
-    COPY: "copy"
+    PUBLIC: "public"
   };
 
   const isEmptyObject = (obj) => {
@@ -89,6 +90,24 @@ module.exports = function (Job) {
       }
     }
       break;
+    case Job.types.PUBLIC: {
+      const filter = {
+        fields: {
+          "pid": true            },
+        where: {
+          isPublic: true,
+          pid: {
+            inq: ids
+          }
+        }
+      };
+      const result = await Dataset.find(filter, ctx.options);
+      if (result.length !== ids.length) {
+        e.message = "The following datasets are not public - no job sent:\n" + JSON.stringify(ids.filter(id => !result.includes(id)));
+        throw e;
+      }
+    }
+      break;
     default:
       //Not check other job types
       break;
@@ -101,7 +120,7 @@ module.exports = function (Job) {
     const datasetsToCheck = ctx.instance.datasetList.filter(x => x.files.length > 0);
     const ids = datasetsToCheck.map(x => x.pid);
     switch (ctx.instance.type) {
-    case Job.types.COPY:
+    case Job.types.PUBLIC:
       if (ids.length > 0) {
         const filter = {
           fields: {
@@ -151,14 +170,28 @@ module.exports = function (Job) {
     }
   };
   /**
+   * Check the the user is authenticated when requesting other job types than public job
+   */
+  const checkPermission = (ctx) => {
+    const unauthenticated = ctx.options.accessToken === null;
+    if (unauthenticated && ctx.instance.type !== Job.types.PUBLIC) {
+      const error = new Error();
+      error.statusCode = 401,
+      error.name = "Error",
+      error.message = "Authorization Required",
+      error.code = "AUTHORIZATION_REQUIRED";
+      throw error;
+    }
+  };
+  /**
      * Validate if the job is performable
      */
   const validateJob = async (ctx) => {
     const ids = ctx.instance.datasetList.map(x => x.pid);
+    checkPermission(ctx, ids);
     await checkDatasetsExistance(ctx, ids);
     await checkDatasetsState(ctx, ids);
     await checkFilesExistance(ctx, ids);
-
   };
 
   // Attach job submission to Kafka
@@ -175,7 +208,7 @@ module.exports = function (Job) {
     // therefore override this field both for users and functional accounts
     // For copy job requested by anonymous user the emailJobInitiator must remain.
     if (ctx.instance) {
-      if (ctx.instance.type != Job.types.COPY) {
+      if (ctx.instance.type != Job.types.PUBLIC) {
         ctx.instance.emailJobInitiator = ctx.options.currentUserEmail;
       }
       if (ctx.isNewInstance) {

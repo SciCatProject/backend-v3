@@ -17,7 +17,7 @@ var pid1 = null;
 var pid2 = null;
 var archiveJobId = null;
 var retrieveJobId = null;
-var copyJobIds = [];
+var publicJobIds = [];
 var origDatablockId = null;
 var testraw = {
   "principalInvestigator": "bertram.astor@grumble.com",
@@ -152,9 +152,9 @@ var testRetrieveJob = {
   }
 };
 
-var testCopyJob = {
-  "emailJobInitiator": "scicatarchivemanger@psi.ch",
-  "type": "copy",
+var testPublicJob = {
+  "emailJobInitiator": "firstname.lastname@gmail.com",
+  "type": "public",
   "jobStatusMessage": "jobSubmitted",
   "datasetList": [{
     "pid": "dummy",
@@ -167,8 +167,9 @@ var testCopyJob = {
   ]
 };
 var app;
-before(function () {
+before(function (done) {
   app = require("../server/server");
+  setTimeout(done, 5000);
 });
 
 describe("Test New Job Model", () => {
@@ -207,7 +208,7 @@ describe("Test New Job Model", () => {
         var pidtest = res.body["pid"];
         testArchiveJob.datasetList[0].pid = pidtest;
         testRetrieveJob.datasetList[0].pid = pidtest;
-        testCopyJob.datasetList[0].pid = pidtest;
+        testPublicJob.datasetList[0].pid = pidtest;
         testOriginDataBlock.datasetId = pidtest;
         pid1 = encodeURIComponent(res.body["pid"]);
         done();
@@ -230,8 +231,23 @@ describe("Test New Job Model", () => {
         var pidtest = res.body["pid"];
         testArchiveJob.datasetList[1].pid = pidtest;
         testRetrieveJob.datasetList[1].pid = pidtest;
-        testCopyJob.datasetList[1].pid = pidtest;
+        testPublicJob.datasetList[1].pid = pidtest;
         pid2 = encodeURIComponent(res.body["pid"]);
+        done();
+      });
+  });
+
+  it("Adds a new archive job request without authentication, which should fails", function (done) {
+    request(app)
+      .post("/api/v3/Jobs")
+      .send(testArchiveJob)
+      .set("Accept", "application/json")
+      .expect(401)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("error");
         done();
       });
   });
@@ -248,6 +264,7 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.property("type").and.be.string;
         archiveJobId = res.body["id"];
+        //setTimeout(done, 3000);
         done();
       });
   });
@@ -458,6 +475,7 @@ describe("Test New Job Model", () => {
         }
         res.body.should.have.property("id");
         retrieveJobId = res.body["id"];
+        // setTimeout(done, 3000);
         done();
       });
   });
@@ -526,6 +544,7 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.property("jobResultObject");
         done();
+        // setTimeout(done, 3000);
       });
   });
 
@@ -572,6 +591,7 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.property("jobStatusMessage").and.be.string;
         done();
+        //setTimeout(done, 3000);
       });
   });
 
@@ -615,6 +635,7 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         res.body.should.have.property("count").and.equal(2);
+        //setTimeout(done, 3000);
         return done();
       });
   });
@@ -636,10 +657,80 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Adds a new copy job request", function (done) {
+  it("Adds a new public job request on private datasets, which should fails", function (done) {
     request(app)
-      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testCopyJob)
+      .post("/api/v3/Jobs")
+      .send(testPublicJob)
+      .set("Accept", "application/json")
+      .expect(409)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("error");
+        done();
+      });
+  });
+
+  it("Set isPublic to true for one of the dataset", function (done) {
+    request(app)
+      .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
+      .send(
+        {
+          "isPublic": true
+        })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.nested.property("isPublic").and.equal(true);
+        done();
+      });
+  });
+
+  it("Adds a new public job request on one public and one private dataset, which should fails", function (done) {
+    request(app)
+      .post("/api/v3/Jobs")
+      .send(testPublicJob)
+      .set("Accept", "application/json")
+      .expect(409)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("error");
+        done();
+      });
+  });
+
+  it("Update isPublic to true on both datasets", function (done) {
+    var filter = {
+      pid: {
+        inq: [pid1, pid2]
+      }
+    };
+    request(app)
+      .post("/api/v3/Datasets/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+      .send({
+        "isPublic": true
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("count").and.equal(2);
+        done();
+      });
+  });
+
+  it("Adds a new public job request without authentication", function (done) {
+    request(app)
+      .post("/api/v3/Jobs")
+      .send(testPublicJob)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
@@ -647,15 +738,32 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         res.body.should.have.property("type").and.be.string;
-        copyJobIds.push(res.body["id"]);
-
+        publicJobIds.push(res.body["id"]);
         done();
+        //setTimeout(done, 3000);
       });
   });
 
-  it("Send an update status to the copy job request, signal finished job with partial failure", function (done) {
+  it("Adds a new public job request with authentication", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + copyJobIds[0] + "?access_token=" + accessTokenArchiveManager)
+      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
+      .send(testPublicJob)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("type").and.be.string;
+        publicJobIds.push(res.body["id"]);
+        done();
+        // setTimeout(done, 3000);
+      });
+  });
+
+  it("Send an update status to the public job request, signal finished job with partial failure", function (done) {
+    request(app)
+      .put("/api/v3/Jobs/" + publicJobIds[0] + "?access_token=" + accessTokenArchiveManager)
       .send({
         "jobStatusMessage": "finishedUnsuccessful",
         "jobResultObject": {
@@ -687,31 +795,33 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         done();
+        // setTimeout(done, 3000);
       });
   });
 
-  it("Adds a new copy job request with to copy some selected files", function (done) {
-    testCopyJob.datasetList[0].files = ["file1.txt", "file2.txt"];
+  it("Adds a new public job request to download some selected files", function (done) {
+    testPublicJob.datasetList[0].files = ["file1.txt", "file2.txt"];
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testCopyJob)
+      .send(testPublicJob)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
       .end(function (err, res) {
         //reset
-        testCopyJob.datasetList[0].files = [];
+        testPublicJob.datasetList[0].files = [];
         if (err)
           return done(err);
         res.body.should.have.property("type").and.be.string;
-        copyJobIds.push(res.body["id"]);
+        publicJobIds.push(res.body["id"]);
         done();
+        // setTimeout(done, 3000);
       });
   });
 
-  it("Send an update status to the copy job request, signal successful job", function (done) {
+  it("Send an update status to the public job request, signal successful job", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + copyJobIds[1] + "?access_token=" + accessTokenArchiveManager)
+      .put("/api/v3/Jobs/" + publicJobIds[1] + "?access_token=" + accessTokenArchiveManager)
       .send({
         "jobStatusMessage": "finishedUnsuccessful",
         "jobResultObject": {
@@ -733,20 +843,36 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         done();
+        // setTimeout(done, 3000);
       });
   });
 
-  it("Adds a new copy job request with to copy some selected files the dont exist, which should fail", function (done) {
-    testCopyJob.datasetList[0].files = ["file1.txt", "file100.txt"];
+  it("Add new job using put, which should fails. Ensure that adding new job without authentication using put is not possible ", function (done) {
+    request(app)
+      .put("/api/v3/Jobs/")
+      .send(testPublicJob)
+      .set("Accept", "application/json")
+      .expect(401)
+      .expect("Content-Type", /json/)
+      .end(function (err, _res) {
+        if (err)
+          return done(err);
+        done();
+      });
+  });
+
+
+  it("Adds a new public job request with to download some selected files that dont exist, which should fail", function (done) {
+    testPublicJob.datasetList[0].files = ["file1.txt", "file100.txt"];
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testCopyJob)
+      .send(testPublicJob)
       .set("Accept", "application/json")
       .expect(404)
       .expect("Content-Type", /json/)
       .end(function (err, res) {
         //reset
-        testCopyJob.datasetList[0].files = [];
+        testPublicJob.datasetList[0].files = [];
         if (err)
           return done(err);
         res.body.should.have.property("error").and.be.string;
@@ -781,8 +907,8 @@ describe("Test New Job Model", () => {
       });
   });
 
-  copyJobIds.forEach(jobId => {
-    it("should delete the copy Job" + jobId, function (done) {
+  publicJobIds.forEach(jobId => {
+    it("should delete the public Job" + jobId, function (done) {
       request(app)
         .delete("/api/v3/Jobs/" + jobId + "?access_token=" + accessTokenArchiveManager)
         .set("Accept", "application/json")

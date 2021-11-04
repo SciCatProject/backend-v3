@@ -11,7 +11,7 @@ module.exports = (app) => {
   const jobEventEmitter = Job.eventEmitter;
   // Render email template with email context and send it
   const sendEmail = (to, cc, emailContext) => {
-    const htmlTemplate = fs.readFileSync("email-templates/job-tempate.html", "utf-8");
+    const htmlTemplate = fs.readFileSync("email-templates/job-template.html", "utf-8");
     const emailTemplate = Handlerbars.compile(htmlTemplate);
     const email = emailTemplate(emailContext);
     const subject = emailContext.subject;
@@ -93,7 +93,7 @@ module.exports = (app) => {
     const to = ctx.instance.emailJobInitiator;
     const emailContext = {
       domainName: config.host,
-      subject: `SciCat: ${jobType} job submitted successfully`,
+      subject: `SciCat: Your ${jobType} job submitted successfully`,
       jobSubmissionNotification: {
         jobId: ctx.instance.id,
         jobType,
@@ -123,7 +123,7 @@ module.exports = (app) => {
         const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
         const emailContext = {
           domainName: config.host,
-          subject: ` Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
+          subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
           jobFinishedNotification: {
             jobId,
             jobType,

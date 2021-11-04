@@ -62,16 +62,54 @@
 <body>
     <div class="container">
         <h2>{{subject}}</h2>
+        <!-- Template for job submission comfirmation -->
+        {{#with jobSubmissionNotification}}
+        <div>
+            Your {{jobType}} job has been submitted and will be processed as soon as possible.<br>
+            You will be notified by email as soon as the job is completed.<br>
+            Job id: {{jobId}}
+        </div>
+        {{#if jobData}}
+        <p><b>Job will be perfomed on the following dataset(s):</b></p>
+        <table>
+            {{#each jobData}}
+            {{#each this}}
+            <tr {{#if (eq @key "pid")}} style="background-color: lightblue;"{{/if}}>
+                <td class="key">
+                    {{keyToWord @key}}
+                </td>
+                <td>{{unwrapJSON @this}}</td>
+            </tr>
+            {{/each}}
+            {{/each}}
+        </table>
+        {{/if}}
+        <p>{{additionalMsg}}</p>
+        {{/with}}
+
         <!-- Template for finished job  Notification -->
         {{#with jobFinishedNotification}}
         <div>
             Your {{jobType}} job is now finished.<br>
-            Job id: {{jobId}}
+            Job id: {{jobId}}<br>
             {{#if jobStatusMessage}}
-            The returned job status is: <b>{{jobStatusMessage}}</b>.<br>
+            <p>The returned job status is: <b>{{jobStatusMessage}}</b></p>
             {{/if}}
             {{#if failure}}
             <p class="error">The job resulted in an error message. Please look at the details below.</p>
+            {{/if}}
+            {{#if jobResultObject}}
+            <p><b>The returned Job result details are:</b></p>
+            <table>
+                {{#each jobResultObject}}
+                <tr>
+                    <td>
+                        {{keyToWord @key}}
+                    </td>
+                    <td>{{unwrapJSON @this}}</td>
+                </tr>
+                {{/each}}
+            </table>
             {{/if}}
             {{#with datasets}}
                 {{#if bad}}
