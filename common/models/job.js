@@ -9,7 +9,7 @@ module.exports = function (Job) {
   Job.datasetStates = {
     retrieve: "retrievable",
     archive: "archivable",
-    public: "isPublic"
+    public: "isPublished"
   };
   Job.types = {
     RETRIEVE: "retrieve",
@@ -93,9 +93,10 @@ module.exports = function (Job) {
     case Job.types.PUBLIC: {
       const filter = {
         fields: {
-          "pid": true            },
+          "pid": true
+        },
         where: {
-          isPublic: true,
+          [Job.datasetStates.public]: true,
           pid: {
             inq: ids
           }

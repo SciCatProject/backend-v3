@@ -227,7 +227,7 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Update isPublic to true on both datasets", function (done) {
+  it("Update isPublished to true on both datasets", function (done) {
     var filter = {
       pid: {
         inq: [pid1, pid2]
@@ -236,7 +236,7 @@ describe("Test New Job Model", () => {
     request(app)
       .post("/api/v3/Datasets/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
       .send({
-        "isPublic": true
+        "isPublished": true
       })
       .set("Accept", "application/json")
       .expect(200)

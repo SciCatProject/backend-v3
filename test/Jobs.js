@@ -672,12 +672,12 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Set isPublic to true for one of the dataset", function (done) {
+  it("Set  to true for one of the dataset", function (done) {
     request(app)
       .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
       .send(
         {
-          "isPublic": true
+          "isPublished": true
         })
       .set("Accept", "application/json")
       .expect(200)
@@ -685,7 +685,7 @@ describe("Test New Job Model", () => {
       .end(function (err, res) {
         if (err)
           return done(err);
-        res.body.should.have.nested.property("isPublic").and.equal(true);
+        res.body.should.have.nested.property("isPublished").and.equal(true);
         done();
       });
   });
@@ -705,7 +705,7 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Update isPublic to true on both datasets", function (done) {
+  it("Update isPublished to true on both datasets", function (done) {
     var filter = {
       pid: {
         inq: [pid1, pid2]
@@ -714,7 +714,7 @@ describe("Test New Job Model", () => {
     request(app)
       .post("/api/v3/Datasets/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
       .send({
-        "isPublic": true
+        "isPublished": true
       })
       .set("Accept", "application/json")
       .expect(200)
