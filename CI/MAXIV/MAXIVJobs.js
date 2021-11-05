@@ -15,8 +15,8 @@ var accessTokenArchiveManager = null;
 
 var pid1 = null;
 var pid2 = null;
-var copyJobIds = [];
-var origDatablockId = null;
+var publicJobIds = [];
+var origDatablocks = [];
 var testraw = {
   "principalInvestigator": "bertram.astor@grumble.com",
   "endTime": "2011-09-14T06:31:25.000Z",
@@ -112,9 +112,9 @@ const testOriginDataBlock = {
   ]
 };
 
-var testCopyJob = {
+var testPublicJob = {
   "emailJobInitiator": "scicatarchivemanger@psi.ch",
-  "type": "copy",
+  "type": "public",
   "jobStatusMessage": "jobSubmitted",
   "datasetList": [{
     "pid": "dummy",
@@ -127,13 +127,8 @@ var testCopyJob = {
   ]
 };
 var app;
-// before(function () {
-//   app = require("../server/server");
-// });
-before(function (done) {
+before(function () {
   app = require("../server/server");
-  console.log("Waiting for 5 seconds for boot tasks to finish: ", new Date());
-  setTimeout(done, 5000);
 });
 
 describe("Test New Job Model", () => {
@@ -170,7 +165,7 @@ describe("Test New Job Model", () => {
         res.body.should.have.property("pid").and.be.string;
         // store link to this dataset in datablocks
         var pidtest = res.body["pid"];
-        testCopyJob.datasetList[0].pid = pidtest;
+        testPublicJob.datasetList[0].pid = pidtest;
         testOriginDataBlock.datasetId = pidtest;
         pid1 = encodeURIComponent(res.body["pid"]);
         done();
@@ -191,7 +186,7 @@ describe("Test New Job Model", () => {
         res.body.should.have.property("pid").and.be.string;
         // store link to this dataset in datablocks
         var pidtest = res.body["pid"];
-        testCopyJob.datasetList[1].pid = pidtest;
+        testPublicJob.datasetList[1].pid = pidtest;
         pid2 = encodeURIComponent(res.body["pid"]);
         done();
       });
@@ -209,15 +204,54 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.property("size").and.equal(10);
         res.body.should.have.property("id").and.be.string;
-        origDatablockId = encodeURIComponent(res.body["id"]);
+        origDatablocks.push(encodeURIComponent(res.body["id"]));
         done();
       });
   });
 
-  it("Adds a new copy job request", function (done) {
+  it("Adds a second origDatablock ", function (done) {
+    testOriginDataBlock.datasetId = decodeURIComponent(pid2);
     request(app)
-      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testCopyJob)
+      .post("/api/v3/OrigDatablocks?access_token=" + accessTokenIngestor)
+      .send(testOriginDataBlock)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("size").and.equal(10);
+        res.body.should.have.property("id").and.be.string;
+        origDatablocks.push(encodeURIComponent(res.body["id"]));
+        done();
+      });
+  });
+
+  it("Update isPublic to true on both datasets", function (done) {
+    var filter = {
+      pid: {
+        inq: [pid1, pid2]
+      }
+    };
+    request(app)
+      .post("/api/v3/Datasets/update?where=" + JSON.stringify(filter) + "&access_token=" + accessTokenArchiveManager)
+      .send({
+        "isPublic": true
+      })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("count").and.equal(2);
+        done();
+      });
+  });
+  it("Adds a new public job request", function (done) {
+    request(app)
+      .post("/api/v3/Jobs")
+      .send(testPublicJob)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
@@ -225,23 +259,24 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         res.body.should.have.property("type").and.be.string;
-        copyJobIds.push(res.body["id"]);
+        publicJobIds.push(res.body["id"]);
         done();
+        // setTimeout(done, 3000);
       });
   });
 
-  it("Send an update status to the copy job request, signal finished job with partial failure", function (done) {
+  it("Send an update status to the public job request, signal finished job with partial failure", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + copyJobIds[0] + "?access_token=" + accessTokenArchiveManager)
+      .put("/api/v3/Jobs/" + publicJobIds[0] + "?access_token=" + accessTokenArchiveManager)
       .send({
         "jobStatusMessage": "finishedUnsuccessful",
         "jobResultObject": {
           "good": [{
-            "pid": decodeURI(pid1),
+            "pid": decodeURIComponent(pid1),
             "downloadLink": "Globus link"
           }],
           "bad": [{
-            "pid": decodeURI(pid2),
+            "pid": decodeURIComponent(pid2),
             "downloadLink": "Globus link",
             "availableFiles": [{
               file: "file1.txt",
@@ -267,37 +302,37 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Adds a new copy job request with to copy some selected files", function (done) {
-    testCopyJob.datasetList[0].files = ["file1.txt", "file2.txt"];
+  it("Adds a new public job request to download some selected files", function (done) {
+    testPublicJob.datasetList[0].files = ["file1.txt", "file2.txt"];
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testCopyJob)
+      .send(testPublicJob)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
       .end(function (err, res) {
         //reset
-        testCopyJob.datasetList[0].files = [];
+        testPublicJob.datasetList[0].files = [];
         if (err)
           return done(err);
         res.body.should.have.property("type").and.be.string;
-        copyJobIds.push(res.body["id"]);
+        publicJobIds.push(res.body["id"]);
         setTimeout(done, 3000);
       });
   });
 
-  it("Send an update status to the copy job request, signal successful job", function (done) {
+  it("Send an update status to the public job request, signal successful job", function (done) {
     request(app)
-      .put("/api/v3/Jobs/" + copyJobIds[1] + "?access_token=" + accessTokenArchiveManager)
+      .put("/api/v3/Jobs/" + publicJobIds[1] + "?access_token=" + accessTokenArchiveManager)
       .send({
         "jobStatusMessage": "finishedSuccessful",
         "jobResultObject": {
           "good": [{
-            "pid": decodeURI(pid1),
+            "pid": decodeURIComponent(pid1),
             "downloadLink": "Globus link 1"
           },
           {
-            "pid": decodeURI(pid2),
+            "pid": decodeURIComponent(pid2),
             "downloadLink": "Globus link 2"
           }],
           "bad": []
@@ -313,26 +348,8 @@ describe("Test New Job Model", () => {
       });
   });
 
-  it("Adds a new copy job request with to copy some selected files the dont exist, which should fail", function (done) {
-    testCopyJob.datasetList[0].files = ["file1.txt", "file100.txt"];
-    request(app)
-      .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
-      .send(testCopyJob)
-      .set("Accept", "application/json")
-      .expect(404)
-      .expect("Content-Type", /json/)
-      .end(function (err, res) {
-        //reset
-        testCopyJob.datasetList[0].files = [];
-        if (err)
-          return done(err);
-        res.body.should.have.property("error").and.be.string;
-        done();
-      });
-  });
-
-  copyJobIds.forEach(jobId => {
-    it("should delete the copy Job" + jobId, function (done) {
+  publicJobIds.forEach(jobId => {
+    it("should delete the public Job" + jobId, function (done) {
       request(app)
         .delete("/api/v3/Jobs/" + jobId + "?access_token=" + accessTokenArchiveManager)
         .set("Accept", "application/json")
@@ -345,18 +362,19 @@ describe("Test New Job Model", () => {
         });
     });
   });
-
-  it("should delete the originDataBlock", function (done) {
-    request(app)
-      .delete("/api/v3/OrigDatablocks/" + origDatablockId + "?access_token=" + accessTokenArchiveManager)
-      .set("Accept", "application/json")
-      .expect(200)
-      .expect("Content-Type", /json/)
-      .end((err, _res) => {
-        if (err)
-          return done(err);
-        done();
-      });
+  origDatablocks.forEach((id) => {
+    it("should delete the originDataBlock", function (done) {
+      request(app)
+        .delete("/api/v3/OrigDatablocks/" + id + "?access_token=" + accessTokenArchiveManager)
+        .set("Accept", "application/json")
+        .expect(200)
+        .expect("Content-Type", /json/)
+        .end((err, _res) => {
+          if (err)
+            return done(err);
+          done();
+        });
+    });
   });
 
 

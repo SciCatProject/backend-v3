@@ -4,7 +4,7 @@ const { Kafka } = require("kafkajs");
 const Handlerbars = require("handlebars");
 const fs = require("fs");
 const utils = require("../../common/models/utils");
-
+// MAXIV
 module.exports = (app) => {
   const Job = app.models.Job;
   const Dataset = app.models.Dataset;
@@ -89,7 +89,7 @@ module.exports = (app) => {
   };
     // Populate email context for job submission notification
   const sendStartJobEmail = async (ctx, jobData) => {
-    const jobType = ctx.instance.type;
+    const jobType = "download";
     const to = ctx.instance.emailJobInitiator;
     const emailContext = {
       domainName: config.host,
@@ -109,67 +109,62 @@ module.exports = (app) => {
     // Iterate in case of bulk update send out email to each job
     ctx.hookState.oldData.forEach(async (oldData) => {
       const currentJobData = await Job.findById(oldData.id, ctx.options);
-      //Check that statysMessage has changed
+      //Check that statusMessage has changed. Only run on finished job
       if (currentJobData.jobStatusMessage != oldData.jobStatusMessage && currentJobData.jobStatusMessage.indexOf("finish") !== -1) {
         // const ids = currentJobData.datasetList.map(x => x.pid);
         let to = currentJobData.emailJobInitiator;
         const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentJobData;
         const failure = jobStatusMessage.indexOf("finishedSuccessful") === -1;
-        // Split result into good and bad
-        const good = jobResultObject.good;
-        const bad = jobResultObject.bad;
-        // add cc message in case of failure to scicat admin
-        const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
-        const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
-        const emailContext = {
-          domainName: config.host,
-          subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
-          jobFinishedNotification: {
-            jobId,
-            jobType,
-            failure,
-            jobStatusMessage,
-            datasets: {
-              good,
-              bad
-            },
-            additionalMsg: "The datasets are now available in public storage and ready to be downloaded."
-          }
-        };
-        sendEmail(to, cc, emailContext);
+        if (jobType === Job.types.PUBLIC) {
+          // Split result into good and bad
+          const good = jobResultObject.good;
+          const bad = jobResultObject.bad;
+          // add cc message in case of failure to scicat admin
+          const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
+          const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
+          const emailContext = {
+            domainName: config.host,
+            subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
+            jobFinishedNotification: {
+              jobId,
+              jobType,
+              failure,
+              jobStatusMessage,
+              datasets: {
+                good,
+                bad
+              },
+              additionalMsg: "The datasets are now available in public storage and ready to be downloaded."
+            }
+          };
+          sendEmail(to, cc, emailContext);
+        }
       }
     });
   };
     //Run on new job only
   const publishJob = async (ctx) => {
-    // Only trigger on copy job since MAXIV doesn't have other jobs
-    if (ctx.instance.type === Job.types.COPY) {
+    // Only trigger on public job since MAXIV doesn't have other jobs
+    if (ctx.instance.type === Job.types.PUBLIC) {
       const jobData = await getFilesToCopy(ctx);
       const kafka = new Kafka(config.jobKafkaProducer.config);
       const producer = kafka.producer();
-      await producer.connect().catch(error => console.log("Error", error));
+      await producer.connect().catch(error => console.log("Error connecting to kafka cluster", error));
       await producer
         .send({
           topic: config.jobKafkaProducer.topic,
-          messages: [
-            {
-              key: "job_id",
-              value: ctx.instance.id
-            },
-            {
-              value: JSON.stringify(jobData)
-            }
-          ],
+          messages: [{
+            value: JSON.stringify(jobData)
+          }],
         })
         .then(async () => {
-          // await markDatasetsAsScheduled(ids, ctx.instance.type);
           sendStartJobEmail(ctx, jobData);
         })
-        .catch(e => console.error("Failed to submit job", e));
+        .catch(e => console.error(`Failed to submit job id: ${ctx.instance.id}`, e));
       await producer.disconnect();
     }
   };
-
+  // Listen to events from Job
   jobEventEmitter.addListener("jobCreated", publishJob);
   jobEventEmitter.addListener("jobUpdated", sendFinishJobEmail);
 };

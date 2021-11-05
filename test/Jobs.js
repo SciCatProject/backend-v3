@@ -768,11 +768,11 @@ describe("Test New Job Model", () => {
         "jobStatusMessage": "finishedUnsuccessful",
         "jobResultObject": {
           "good": [{
-            "pid": pid1,
+            "pid": decodeURIComponent(pid1),
             "downloadLink": "Globus link"
           }],
           "bad": [{
-            "pid": pid2,
+            "pid": decodeURIComponent(pid2),
             "downloadLink": "Globus link",
             "availableFiles": [{
               file: "file1.txt",
@@ -823,14 +823,14 @@ describe("Test New Job Model", () => {
     request(app)
       .put("/api/v3/Jobs/" + publicJobIds[1] + "?access_token=" + accessTokenArchiveManager)
       .send({
-        "jobStatusMessage": "finishedUnsuccessful",
+        "jobStatusMessage": "finishedSuccessful",
         "jobResultObject": {
           "good": [{
-            "pid": pid1,
+            "pid": decodeURIComponent(pid1),
             "downloadLink": "Globus link 1"
           },
           {
-            "pid": pid2,
+            "pid": decodeURIComponent(pid2),
             "downloadLink": "Globus link 2"
           }],
           "bad": []
