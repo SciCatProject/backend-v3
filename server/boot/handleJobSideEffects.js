@@ -169,7 +169,7 @@ module.exports = (app) => {
 
       const emailContext = {
         domainName: config.host,
-        subject: `SciCat: Your download job submitted successfully`,
+        subject: "SciCat: Your download job submitted successfully",
         jobSubmissionNotification: {
           jobId: ctx.instance.id,
           jobType: "download",
