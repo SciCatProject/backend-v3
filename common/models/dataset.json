@@ -112,6 +112,10 @@
         "isPublished": {
             "type": "boolean",
             "description": "Flag is true when data are made publically available"
+        },
+        "sharedWith": {
+          "type": ["string"],
+          "description": "List of users that the dataset has been shared with"
         }
     },
     "validations": [],
