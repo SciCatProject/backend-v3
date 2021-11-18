@@ -11,7 +11,7 @@ This repository is due to be renamed.
 The new name will be *backend*. Full URL will be: https://github.com/SciCatProject/backend.
 The current URL will still be active and point to the new one. We kindly suggest to migrate as soon as possible.
 
-The rename is scheduled to happen on friday November 26th, 2021.
+The rename is scheduled to happen on **friday November 26th, 2021.**
 
 In case you have questions, please contact the SciCat team at ESS:
 - Max Novelli
