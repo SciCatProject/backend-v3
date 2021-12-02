@@ -34,7 +34,7 @@
     "loopback-ds-timestamp-mixin": "^3.4.1",
     "mathjs": "^7.6.0",
     "moment": "^2.29.1",
-    "moment-timezone": "^0.5.33",
+    "moment-timezone": "^0.5.34",
     "nodemailer": "^6.7.0",
     "passport-ldapauth": "^2.1.4",
     "passport-local": "^1.0.0",
