@@ -38,7 +38,7 @@
     "nodemailer": "^6.7.2",
     "passport-ldapauth": "^2.1.4",
     "passport-local": "^1.0.0",
-    "passport-openidconnect": "^0.1.0",
+    "passport-openidconnect": "^0.1.1",
     "serve-favicon": "2.5.0",
     "snyk": "^1.775.0",
     "strong-error-handler": "3.5.0",
