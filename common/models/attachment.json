@@ -20,7 +20,7 @@
     },
     "caption": {
       "type": "string",
-      "description": "Attachment caption to show in catanie",
+      "description": "Attachment caption to show in frontend",
       "default": ""
     }
   },
