@@ -107,7 +107,7 @@ module.exports = function(Dataset) {
   });
   Dataset.beforeRemote("prototype.__get__attachments", function(ctx, unused, next){
     checkACLtoRelatedModel(ctx, next);
-  })
+  });
 
   Dataset.beforeRemote("prototype.__get__origdatablocks", function(ctx, unused, next){
     checkACLtoRelatedModel(ctx, next);
@@ -132,7 +132,7 @@ module.exports = function(Dataset) {
             || ctx.instance.accessGroups && groups.some(g => ctx.instance.accessGroups.indexOf(g) !== -1)
             || ctx.instance.sharedWith && groups.some(g =>  ctx.instance.sharedWith.indexOf(g) !== -1)
             || groups.indexOf(ctx.instance.instrumentGroup) !== -1))) {
-        return next();
+      return next();
     }
     return next(error);
   };
