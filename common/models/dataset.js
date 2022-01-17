@@ -105,6 +105,37 @@ module.exports = function(Dataset) {
     }
     next();
   });
+  Dataset.beforeRemote("prototype.__get__attachments", function(ctx, unused, next){
+    checkACLtoRelatedModel(ctx, next);
+  })
+
+  Dataset.beforeRemote("prototype.__get__origdatablocks", function(ctx, unused, next){
+    checkACLtoRelatedModel(ctx, next);
+  });
+
+  Dataset.beforeRemote("prototype.__get__datablocks", function(ctx, unused, next){
+    checkACLtoRelatedModel(ctx, next);
+  });
+
+  const checkACLtoRelatedModel = (ctx, next) => {
+    const accessToken = ctx.args.options.accessToken;
+    const error = new Error("Authorization Required");
+    error.statusCode = 401;
+    error.name = "Error";
+    error.code = "AUTHORIZATION_REQUIRED";
+    const groups = ctx.args.options.currentGroups;
+    // Allow access to related model if dataset is published or user is owner or user is in a group having read access to the dataset
+    if (ctx.instance.isPublished
+        || (accessToken
+            && (groups.indexOf(ctx.instance.ownerGroup) !== -1
+            || groups.indexOf("globalaccess") !== -1
+            || ctx.instance.accessGroups && groups.some(g => ctx.instance.accessGroups.indexOf(g) !== -1)
+            || ctx.instance.sharedWith && groups.some(g =>  ctx.instance.sharedWith.indexOf(g) !== -1)
+            || groups.indexOf(ctx.instance.instrumentGroup) !== -1))) {
+        return next();
+    }
+    return next(error);
+  };
 
   Dataset.beforeRemote("findOne", function(ctx, unused, next) {
     const accessToken = ctx.args.options.accessToken;
