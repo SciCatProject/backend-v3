@@ -2,25 +2,25 @@ REGISTRY		:= registry.nersc.gov
 PROJECT 		:= als
 REGISTRY_NAME	:= ${REGISTRY}/${PROJECT}/${IMG}
 
-NAME_CATAMEL  	:= catamel
-CATAMEL_TAG    	:= $$(git -C ../../ describe --tags)
-IMG_CATAMEL  		:= ${NAME_CATAMEL}:${CATAMEL_TAG}
-REGISTRY_CATAMEL	:= ${REGISTRY}/${PROJECT}/${NAME_CATAMEL}:${CATAMEL_TAG}
+NAME_SCICAT_BACKEND  	:= scicat_backend
+SCICAT_BACKEND_TAG    	:= $$(git -C ../../ describe --tags)
+IMG_SCICAT_BACKEND      := ${NAME_SCICAT_BACKEND}:${SCICAT_BACKEND_TAG}
+REGISTRY_SCICAT_BACKEND	:= ${REGISTRY}/${PROJECT}/${NAME_SCICAT_BACKEND}:${SCICAT_BACKEND_TAG}
 
 # make -C CI/ALS <target>
 
-.PHONY: build_catamel push_catamel 
+.PHONY: build_scicat_backend push_scicat_backend 
 
 
-build_catamel:
-	@echo "tagging to: " ${IMG_CATAMEL}    ${REGISTRY_CATAMEL}
-	@docker build -t ${IMG_CATAMEL} -f Dockerfile ../../
-	@echo "tagging to: " ${IMG_CATAMEL}    ${REGISTRY_CATAMEL}
-	@docker tag ${IMG_CATAMEL} ${REGISTRY_CATAMEL}
+build_scicat_backend:
+	@echo "tagging to: " ${IMG_SCICAT_BACKEND}    ${REGISTRY_SCICAT_BACKEND}
+	@docker build -t ${IMG_SCICAT_BACKEND} -f Dockerfile ../../
+	@echo "tagging to: " ${IMG_SCICAT_BACKEND}    ${REGISTRY_SCICAT_BACKEND}
+	@docker tag ${IMG_SCICAT_BACKEND} ${REGISTRY_SCICAT_BACKEND}
  
-push_catamel:
-	@echo "Pushing " ${REGISTRY_CATAMEL}
-	@docker push ${REGISTRY_CATAMEL}
+push_scicat_backend:
+	@echo "Pushing " ${REGISTRY_SCICAT_BACKEND}
+	@docker push ${REGISTRY_SCICAT_BACKEND}
 
 
 login:

@@ -1,10 +1,10 @@
 #!/bin/bash 
 
-cd $DACATHOME/catamel/client/
+cd $SCICAT_HOME/backend/client/
 
 echo "copying sdk"
-cp -r $DACATHOME/catanie/src/app/shared/sdk/services/custom/User.ts $DACATHOME/sdk/services/custom/User.ts
-rm -rf $DACATHOME/catanie/src/app/shared/sdk 
-cp -r api/angular2/sdk $DACATHOME/catanie/src/app/shared/sdk/ 
-cp $DACATHOME/sdk/services/custom/User.ts $DACATHOME/catanie/src/app/shared/sdk/services/custom/User.ts
+cp -r $SCICAT_HOME/frontend/src/app/shared/sdk/services/custom/User.ts $SCICAT_HOME/sdk/services/custom/User.ts
+rm -rf $SCICAT_HOME/frontend/src/app/shared/sdk 
+cp -r api/angular2/sdk $SCICAT_HOME/frontend/src/app/shared/sdk/ 
+cp $SCICAT_HOME/sdk/services/custom/User.ts $SCICAT_HOME/frontend/src/app/shared/sdk/services/custom/User.ts
 echo "done"

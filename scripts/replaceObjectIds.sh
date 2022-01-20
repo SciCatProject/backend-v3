@@ -1,5 +1,5 @@
 #!/bin/sh
-# this command should be executed once after deploying catamel commit
+# this command should be executed once after deploying backend commit
 # c592879d656b84f322cd062ff4ca56d45d4d10cd Date:   Tue Jan 19 12:54:58 2021 +0100
 # or later
 # It replaces all ObjectID based ids to normal strings in many SciCat tables
@@ -13,5 +13,5 @@ read -p "Are you sure you want to run the script ? This action can not be undone
 echo    
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-    mongo -u "dacatDBAdmin" -p "...."  --authenticationDatabase "dacat" HOSTNAME/dacat  replaceObjectIds.js
+    mongo -u "scicatDBAdmin" -p "...."  --authenticationDatabase "dacat" HOSTNAME/dacat  replaceObjectIds.js
 fi

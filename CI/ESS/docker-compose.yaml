@@ -38,11 +38,11 @@ services:
 #      - local-rabbit-rabbitmq.dev
 #      - mongodb
 
-#  catamel:
+#  backend:
 #    build: 
-#      context: catamel
-#      dockerfile: Dockerfile.catamel
-#    image: garethcmurphy/catamel
+#      context: backend
+#      dockerfile: Dockerfile.backend
+#    image: scicat/backend
 #    ports:
 #      - '3000:3000'
 #    depends_on: 
