@@ -18,12 +18,20 @@ module.exports = (app) => {
       }
     };
     switch (jobType) {
-    case jobTypes.ARCHIVE: //Intentional fall through
-    case jobTypes.RETRIEVE: {
+    case jobTypes.ARCHIVE: {
       const values = {
         "$set": {
           "datasetlifecycle.archivable": false,
           "datasetlifecycle.retrievable": false,
+          [`datasetlifecycle.${jobType}StatusMessage`]: statusMessage[jobType]
+        }
+      };
+      await Dataset.updateAll(filter, values);
+    }
+      break;
+    case jobTypes.RETRIEVE: {
+      const values = {
+        "$set": {
           [`datasetlifecycle.${jobType}StatusMessage`]: statusMessage[jobType]
         }
       };

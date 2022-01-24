@@ -301,4 +301,8 @@ module.exports = function (app) {
     });
     next();
   });
+
+  const sanitazeUniqueness = require("./validations").sanitazeUniqueness;
+  sanitazeUniqueness(app.models);
+
 };

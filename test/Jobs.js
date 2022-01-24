@@ -127,8 +127,11 @@ var testRetrieveJob = {
   }
 };
 var app;
-before(function () {
+
+before(function(done) {
   app = require("../server/server");
+  console.log("Waiting for 5 seconds for boot tasks to finish: ",new Date());
+  setTimeout(done,5000);
 });
 
 describe("Test New Job Model", () => {
@@ -397,9 +400,6 @@ describe("Test New Job Model", () => {
       });
   });
 
-
-
-
   it("Adds a new retrieve job request on same dataset, which should  succeed now", function (done) {
     request(app)
       .post("/api/v3/Jobs?access_token=" + accessTokenIngestor)
@@ -417,14 +417,25 @@ describe("Test New Job Model", () => {
       });
   });
 
+  it("Read contents of dataset 1 after retrieve job and make sure that still retrievable", function (done) {
+    request(app)
+      .get("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenIngestor)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        res.body.should.have.nested.property("datasetlifecycle.retrievable").and.equal(true);
+        done();
+      });
+  });
+
   it("Send an update status to the dataset", function (done) {
     request(app)
       .put("/api/v3/Datasets/" + pid1 + "?access_token=" + accessTokenArchiveManager)
       .send({
         "datasetlifecycle": {
-          "archiveReturnMessage": {
-            "text": "This is the result of the archiving process test message"
-          },
           "retrieveReturnMessage": {
             "text": "Some dummy retrieve message"
           },
@@ -436,7 +447,7 @@ describe("Test New Job Model", () => {
       .end(function (err, res) {
         if (err)
           return done(err);
-        res.body.should.have.nested.property("datasetlifecycle.archiveReturnMessage");
+        res.body.should.have.nested.property("datasetlifecycle.retrieveReturnMessage");
         done();
       });
   });

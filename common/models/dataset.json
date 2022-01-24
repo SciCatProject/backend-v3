@@ -180,7 +180,10 @@
                 "fullfacet",
                 "fullquery",
                 "metadataKeys",
-                "thumbnail"
+                "thumbnail",
+                "__get__origdatablocks",
+                "__get__datablocks",
+                "__get__attachments"
             ]
         },
         {
