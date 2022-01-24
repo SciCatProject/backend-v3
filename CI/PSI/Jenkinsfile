@@ -36,18 +36,18 @@ podTemplate(label: 'docker',
      // also available as a Groovy variable—note double quotes for string interpolation
      echo "$USERNAME"
      echo "$PASSWORD"
-     sh "git clone https://$USERNAME:$PASSWORD@git.psi.ch/MELANIE/catamel-psisecrets.git"
-     sh "git clone https://$USERNAME:$PASSWORD@git.psi.ch/MELANIE/catamel-psiconfig.git"
+     sh "git clone https://$USERNAME:$PASSWORD@git.psi.ch/MELANIE/scicat-backend-psisecrets.git"
+     sh "git clone https://$USERNAME:$PASSWORD@git.psi.ch/MELANIE/scicat-backend-psiconfig.git"
      sh "mkdir -p CI/PSI/envfiles"
-     sh "cp catamel-psisecrets/server/pass-db-development/datasources.json CI/PSI/envfiles/datasources.json"
-     sh "cp catamel-psisecrets/server/providers.json CI/PSI/envfiles/providers.json"
-     sh "cp catamel-psisecrets/server/settings.json CI/PSI/envfiles/settings.json"
-     sh "cp catamel-psiconfig/server/config.local.js CI/PSI/envfiles/config.local.js"
+     sh "cp scicat-backend-psisecrets/server/pass-db-development/datasources.json CI/PSI/envfiles/datasources.json"
+     sh "cp scicat-backend-psisecrets/server/providers.json CI/PSI/envfiles/providers.json"
+     sh "cp scicat-backend-psisecrets/server/settings.json CI/PSI/envfiles/settings.json"
+     sh "cp scicat-backend-psiconfig/server/config.local.js CI/PSI/envfiles/config.local.js"
     }
-    sh 'docker build -f CI/PSI/Dockerfile.test . -t catamel_test'
+    sh 'docker build -f CI/PSI/Dockerfile.test . -t scicat_backend_test'
    }
-   stage('SuperTest Catamel ') {
-    sh 'docker run  --privileged -t catamel_test'
+   stage('SuperTest SciCat Backend ') {
+    sh 'docker run  --privileged -t scicat_backend_test'
    }
    stage('Build release') {
     withCredentials([usernamePassword(credentialsId: 'dockerpsi', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
@@ -61,12 +61,12 @@ podTemplate(label: 'docker',
   container('helm') {
    stage('Release') {
     def workspace = pwd()
-    sh "export KUBECONFIG=${workspace}@catamel-psisecrets/server/kubernetes/admin.conf"
+    sh "export KUBECONFIG=${workspace}@scicat-backend-psisecrets/server/kubernetes/admin.conf"
     sh 'kubectl version'
     sh 'helm version'
     // sh 'helm del --purge dacat-api-server-development'
     def tag = sh(script: 'git rev-parse HEAD', returnStdout: true)
-    sh "helm upgrade -i dacat-api-server-development catamel-psiconfig/server/kubernetes/helm/dacat-api-server --namespace=development --set image.tag=$tag"
+    sh "helm upgrade -i dacat-api-server-development scicat-backend-psiconfig/server/kubernetes/helm/dacat-api-server --namespace=development --set image.tag=$tag"
    }
   }
    } catch (e) {

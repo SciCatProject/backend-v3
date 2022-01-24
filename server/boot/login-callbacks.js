@@ -5,7 +5,7 @@
     must be queried to add information to the user's profile. 
 
     With a generic passport implementation, one could simple attach the callback
-    funtion as a member of the passport configuration. However, Catamel uses the 
+    funtion as a member of the passport configuration. However, SciCat Backend uses the 
     loopback-passport-confgigurator, which is configed via a .json file (providers.json) 
     and not through a .js file. This means that the entry in the is at best a string, not a 
     function.

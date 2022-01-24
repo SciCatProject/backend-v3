@@ -27,21 +27,21 @@ services:
     depends_on: 
       - mongodb
 
-#  catanie:
+#  scicat-frontend:
 #    build: 
-#      context: catanie
-#      dockerfile: Dockerfile.catanie
-#    image: garethcmurphy/catanie
+#      context: scicat-frontend
+#      dockerfile: Dockerfile.scicat-frontend
+#    image: scicat/frontend
 #    ports:
 #      - '4200:4200'
 #    depends_on: 
 #      - local-rabbit-rabbitmq.dev
 #      - mongodb
 
-#  backend:
+#  scicat-backend:
 #    build: 
-#      context: backend
-#      dockerfile: Dockerfile.backend
+#      context: scicat-backend
+#      dockerfile: Dockerfile.scicat-backend
 #    image: scicat/backend
 #    ports:
 #      - '3000:3000'

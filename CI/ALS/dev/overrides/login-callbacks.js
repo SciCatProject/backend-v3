@@ -4,7 +4,7 @@
   This module communicates with ALSHub at two different points in the login process.
   
   The first is an observer on the UserIdentity model that adds group information to the user's
-  profile from ALSHub. This gets used by Catamel to enforce access controls.  
+  profile from ALSHub. This gets used by SciCat Backend to enforce access controls.  
   
   The second is a loginCallback for passport that checks that the user is a user in ALSHub. 
   If not, it sends blank credentials to the return of the loginCallback, prompting 
@@ -24,7 +24,7 @@
     must be queried to add information to the user's profile. 
 
     With a generic passport implementation, one could simple attach the callback
-    funtion as a member of the passport configuration. However, Catamel uses the 
+    funtion as a member of the passport configuration. However, SciCat Backend uses the 
     loopback-passport-confgigurator, which is configed via a .json file (providers.json) 
     and not through a .js file. This means that the entry in the is at best a string, not a 
     function.
