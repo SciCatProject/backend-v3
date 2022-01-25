@@ -31,7 +31,7 @@ services:
 #    build: 
 #      context: scicat-frontend
 #      dockerfile: Dockerfile.scicat-frontend
-#    image: scicat/frontend
+#    image: scicatproject/frontend
 #    ports:
 #      - '4200:4200'
 #    depends_on: 
@@ -42,7 +42,7 @@ services:
 #    build: 
 #      context: scicat-backend
 #      dockerfile: Dockerfile.scicat-backend
-#    image: scicat/backend
+#    image: scicatproject/backend
 #    ports:
 #      - '3000:3000'
 #    depends_on: 

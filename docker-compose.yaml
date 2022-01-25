@@ -10,7 +10,7 @@ services:
     build:
       context: .
       dockerfile: CI/ESS/Dockerfile.test
-    image: scicat/backend
+    image: scicatproject/backend
     ports:
       - '3000:3000'
     depends_on:

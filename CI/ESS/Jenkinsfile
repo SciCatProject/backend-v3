@@ -14,8 +14,8 @@ node('docker') {
             def IMAGE_ID = sh ( script: 'git rev-parse HEAD',returnStdout: true).trim()
         sh "docker build --file CI/ESS/Dockerfile.proxy .  --tag scicat/backend:${IMAGE_ID}dmscprod" 
        echo "Git image id : ${IMAGE_ID}"
-       sh "docker push scicat/backend:${IMAGE_ID}dmscprod"
-       sh "docker rmi scicat/backend:${IMAGE_ID}dmscprod"    
+       sh "docker push scicatproject/backend:${IMAGE_ID}dmscprod"
+       sh "docker rmi scicatproject/backend:${IMAGE_ID}dmscprod"    
       }
   }
 }
