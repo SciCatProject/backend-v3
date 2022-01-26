@@ -8,7 +8,7 @@ echo ""
 # -------
 # display help 
 displayHelp() {
-    echo "Usage ${SCRIPT_NAME} [-h] [-g tag] [-i tag]"
+    echo "Usage ${SCRIPT_NAME} [-h] [-g tag] [-i tag] [-d]"
     echo ""
     echo " prepare a docker image and push it to the dockerhub repo "
     echo " in repository scicatproject/backend with tag specified by -i option"
@@ -22,6 +22,7 @@ displayHelp() {
     echo "             the git branch name followed by git tag, separted by dash"
     echo "             Example:"
     echo "             - develop-5d5f42af1ca6816a13b6db60b4778388dc4bf431"
+    echo " -d        : dry run. Check and print arguments and commands but does not take any action"
     echo ""
 }
 
@@ -118,7 +119,7 @@ if [[ "$(docker images -q ${dockerImage} 2> /dev/null)" != "" ]]; then
     echo ""
 fi
 echo "Creating image"
-docker build -t ${dockerImage} -f Dockerfile .
+docker build -t ${dockerImage} -f CI/ESS/Dockerfile .
 echo ""
 
 # push image on docker hub repository
