@@ -116,6 +116,14 @@
         "sharedWith": {
           "type": ["string"],
           "description": "List of users that the dataset has been shared with"
+        },
+        "dataQualityMetrics": {
+            "type": "number",
+            "description": "Rate the quality of a dataset. A number between 1-3 that the user could use to rate a dataset. 1 means bad, 2 means good, 3 means very good"
+        },
+        "comment": {
+            "type": "string",
+            "description": "Comment the user has about a given dataset."
         }
     },
     "validations": [],
