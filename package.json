@@ -40,7 +40,7 @@
     "passport-local": "^1.0.0",
     "passport-openidconnect": "^0.1.1",
     "serve-favicon": "2.5.0",
-    "snyk": "^1.833.0",
+    "snyk": "^1.834.0",
     "strong-error-handler": "3.5.0",
     "superagent": "^5.3.1",
     "uuid": "^7.0.3"
