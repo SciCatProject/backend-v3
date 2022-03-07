@@ -20,7 +20,13 @@
       ],
       "index": true,
       "description": "Optional additional groups which have read access to the data. Users which are member in one of the groups listed here are allowed to access this data. The special group 'public' makes data available to all users"
-    }
+    },
+    "instrumentGroup": {
+        "type":
+          "string",
+        "index": true,
+        "description": "Optional additional groups which have read and write access to the data. Users which are member in one of the groups listed here are allowed to access this data."
+      }
   },
   "validations": [],
   "relations": {},

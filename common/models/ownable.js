@@ -25,6 +25,11 @@ module.exports = function (Ownable) {
               inq: groups
             }
           },
+          {
+            sharedWith: {
+              inq: groups
+            }
+          },
           { isPublished: true }
           ]
         };

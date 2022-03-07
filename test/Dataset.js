@@ -253,4 +253,30 @@ describe("Simple Dataset tests", () => {
         done();
       });
   });
+
+  it("should fail creating a dataset with non unique techniques", function (done) {
+    const ds = Object.keys(testdataset).reduce(
+      (o, k) => (o[k] = testdataset[k], o),
+      {});
+    ds["techniques"] = [
+      { "pid": "1", "name": "a" },
+      { "pid": "1", "name": "a" }
+    ];
+    request(app)
+      .post("/api/v3/Datasets?access_token=" + accessToken)
+      .send(ds)
+      .set("Accept", "application/json")
+      .expect(422)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err) return done(err);
+        const errorDetails = JSON.parse(
+          res.error.text
+        ).error.details;
+        errorDetails.messages.techniques.should.be.eql(["contains duplicate `pid`"]);
+        errorDetails.codes.techniques.should.be.eql(["efficientUniqueness"]);
+        done();
+      });
+  });
+
 });

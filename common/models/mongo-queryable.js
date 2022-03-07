@@ -190,6 +190,13 @@ module.exports = function (MongoQueryableModel) {
                     "accessGroups",
                     fields["userGroups"]
                   )
+                },
+                {
+                  sharedWith: searchExpression(
+                    modelName,
+                    "sharedWith",
+                    fields["userGroups"]
+                  )
                 }
                 ]
               }
@@ -436,6 +443,13 @@ module.exports = function (MongoQueryableModel) {
                     "accessGroups",
                     fields["userGroups"]
                   )
+                },
+                {
+                  sharedWith: searchExpression(
+                    modelName,
+                    "sharedWith",
+                    fields["userGroups"]
+                  )
                 }
                 ]
               }
@@ -597,7 +611,7 @@ module.exports = function (MongoQueryableModel) {
       // however allow history updates
       if (!ctx.data["history"] && ctx.currentInstance) {
         // modify operations are forbidden unless you are member of ownerGroup or have globalaccess role
-        if ((groups.indexOf("globalaccess") < 0) && !ctx.isNewInstance && groups.indexOf(ctx.currentInstance.ownerGroup) < 0) {
+        if ((groups.indexOf("globalaccess") < 0) && !ctx.isNewInstance && groups.indexOf(ctx.currentInstance.ownerGroup) < 0 && groups.indexOf(ctx.currentInstance.instrumentGroup) < 0) {
           var e = new Error();
           e.statusCode = 403;
           e.message = "You must be in ownerGroup " + ctx.currentInstance.ownerGroup + " or have global role to modify document, your groups are:" + groups;

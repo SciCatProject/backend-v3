@@ -5,6 +5,18 @@
 
 For the full documentation please go to the [SciCat home page](https://scicatproject.github.io/) and follow the [documentation link](https://scicatproject.github.io/documentation)
 
+## IMPORTANT!!!
+
+On 2021/11/26, this repository has been renamed to the current name: https://github.com/SciCatProject/backend.
+The previous URL https://github.com/SciCatProject/catamel will still be active and point to the current one. 
+We kindly suggest to migrate as soon as possible.
+
+Naming within the project will be updated in future releases. More info will be posted as soon as we finalize the details.
+
+In case you have questions, please contact the SciCat team at ESS:
+- Max Novelli
+- Henrik Johansson
+
 ## License
 
 This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details

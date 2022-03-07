@@ -5,11 +5,6 @@ const kafka = require("kafka-node");
 var config = require("../../server/config.local");
 var p = require("../../package.json");
 var utils = require("./utils");
-var dsl = require("./dataset-lifecycle.json");
-var ds = require("./dataset.json");
-var dsr = require("./raw-dataset.json");
-var dsd = require("./derived-dataset.json");
-var own = require("./ownable.json");
 const lodash = require("lodash");
 const logger = require("../logger");
 // TODO Feature  Add delete functionality for dataset, which removes Dataset and all linked data:
@@ -110,6 +105,37 @@ module.exports = function(Dataset) {
     }
     next();
   });
+  Dataset.beforeRemote("prototype.__get__attachments", function(ctx, unused, next){
+    checkACLtoRelatedModel(ctx, next);
+  });
+
+  Dataset.beforeRemote("prototype.__get__origdatablocks", function(ctx, unused, next){
+    checkACLtoRelatedModel(ctx, next);
+  });
+
+  Dataset.beforeRemote("prototype.__get__datablocks", function(ctx, unused, next){
+    checkACLtoRelatedModel(ctx, next);
+  });
+
+  const checkACLtoRelatedModel = (ctx, next) => {
+    const accessToken = ctx.args.options.accessToken;
+    const error = new Error("Authorization Required");
+    error.statusCode = 401;
+    error.name = "Error";
+    error.code = "AUTHORIZATION_REQUIRED";
+    const groups = ctx.args.options.currentGroups;
+    // Allow access to related model if dataset is published or user is owner or user is in a group having read access to the dataset
+    if (ctx.instance.isPublished
+        || (accessToken
+            && (groups.indexOf(ctx.instance.ownerGroup) !== -1
+            || groups.indexOf("globalaccess") !== -1
+            || ctx.instance.accessGroups && groups.some(g => ctx.instance.accessGroups.indexOf(g) !== -1)
+            || ctx.instance.sharedWith && groups.some(g =>  ctx.instance.sharedWith.indexOf(g) !== -1)
+            || groups.indexOf(ctx.instance.instrumentGroup) !== -1))) {
+      return next();
+    }
+    return next(error);
+  };
 
   Dataset.beforeRemote("findOne", function(ctx, unused, next) {
     const accessToken = ctx.args.options.accessToken;
@@ -472,180 +498,6 @@ module.exports = function(Dataset) {
       }
     });
   };
-
-  function searchExpression(key, value) {
-    let type = "string";
-    if (key in ds.properties) {
-      type = ds.properties[key].type;
-    } else if (key in dsr.properties) {
-      type = dsr.properties[key].type;
-    } else if (key in dsd.properties) {
-      type = dsd.properties[key].type;
-    } else if (key in dsl.properties) {
-      type = dsl.properties[key].type;
-    } else if (key in own.properties) {
-      type = own.properties[key].type;
-    }
-    if (key === "text") {
-      return {
-        $search: value,
-        $language: "none"
-      };
-    } else if (type === "string") {
-      if (value.constructor === Array) {
-        if (value.length == 1) {
-          return value[0];
-        } else {
-          return {
-            $in: value
-          };
-        }
-      } else {
-        return value;
-      }
-    } else if (type === "date") {
-      return {
-        $gte: new Date(value.begin),
-        $lte: new Date(value.end)
-      };
-    } else if (type === "boolean") {
-      return {
-        $eq: value
-      };
-    } else if (type.constructor === Array) {
-      return {
-        $in: value
-      };
-    }
-  }
-
-  // TODO implement anonymousquery differently, avoid code duplication for fullquery
-  Dataset.anonymousquery = function(fields, limits, options, cb) {
-    // keep the full aggregation pipeline definition
-    let pipeline = [];
-    if (fields === undefined) {
-      fields = {};
-    }
-    // console.log("Inside fullquery:options",options)
-    fields.isPublished = true;
-    // console.log("++++++++++++ fullquery: after filling fields with usergroup:",fields)
-    // let matchJoin = {}
-    // construct match conditions from fields value
-    Object.keys(fields).forEach(function(key) {
-      if (fields[key] && fields[key] !== "null") {
-        if (typeof fields[key] === "string") {
-          if (key === "text") {
-            // unshift because text must be at start of array
-            pipeline.unshift({
-              $match: {
-                $or: [
-                  {
-                    $text: searchExpression(
-                      key,
-                      fields[key]
-                    )
-                  },
-                  {
-                    sourceFolder: {
-                      $regex: fields[key],
-                      $options: "i"
-                    }
-                  }
-                ]
-              }
-            });
-          }
-        }
-        // mode is not a field in dataset, just an object for containing a match clause
-        else if (key === "mode") {
-          pipeline.push({
-            $match: fields[key]
-          });
-        } else if (key === "userGroups") {
-          if (fields["userGroups"].indexOf("globalaccess") < 0) {
-            pipeline.push({
-              $match: {
-                $or: [
-                  {
-                    ownerGroup: searchExpression(
-                      "ownerGroup",
-                      fields["userGroups"]
-                    )
-                  },
-                  {
-                    accessGroups: searchExpression(
-                      "accessGroups",
-                      fields["userGroups"]
-                    )
-                  }
-                ]
-              }
-            });
-          }
-        } else {
-          let match = {};
-          match[key] = searchExpression(key, fields[key]);
-          pipeline.push({
-            $match: match
-          });
-        }
-      }
-    });
-
-    // }
-    // final paging section ===========================================================
-    if (limits) {
-      if ("order" in limits) {
-        // input format: "creationTime:desc,creationLocation:asc"
-        const sortExpr = {};
-        const sortFields = limits.order.split(",");
-        sortFields.map(function(sortField) {
-          const parts = sortField.split(":");
-          const dir = parts[1] == "desc" ? -1 : 1;
-          sortExpr[parts[0]] = dir;
-        });
-        pipeline.push({
-          $sort: sortExpr
-          // e.g. { $sort : { creationLocation : -1, creationLoation: 1 } }
-        });
-      }
-
-      if ("skip" in limits) {
-        pipeline.push({
-          $skip: Number(limits.skip) < 1 ? 0 : Number(limits.skip)
-        });
-      }
-      if ("limit" in limits) {
-        pipeline.push({
-          $limit: Number(limits.limit) < 1 ? 1 : Number(limits.limit)
-        });
-      }
-    }
-    // console.log("Resulting aggregate query in fullquery method:", JSON.stringify(pipeline, null, 3));
-
-    Dataset.getDataSource().connector.connect(function(err, db) {
-      var collection = db.collection("Dataset");
-      collection.aggregate(pipeline, { allowDiskUse: true }, function(err, cursor) {
-        cursor.toArray(function(err, res) {
-          if (err) {
-            console.log("Anonymousquery err handling:", err);
-          }
-          // rename _id to pid
-          res.map(ds => {
-            Object.defineProperty(
-              ds,
-              "pid",
-              Object.getOwnPropertyDescriptor(ds, "_id")
-            );
-            delete ds["_id"];
-          });
-          cb(err, res);
-        });
-      });
-    });
-  };
-
-
 
   Dataset.isValid = function(dataset, next) {
     var ds = new Dataset(dataset);
