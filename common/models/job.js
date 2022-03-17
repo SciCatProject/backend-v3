@@ -28,10 +28,10 @@ module.exports = function (Job) {
   };
 
   /**
-       * Check that all dataset exists
-       * @param {context} ctx
-       * @param {List of dataset id} ids
-       */
+     * Check that all dataset exists
+     * @param {context} ctx
+     * @param {List of dataset id} ids
+     */
   const checkDatasetsExistance = async (ctx, ids) => {
     const Dataset = app.models.Dataset;
     const e = new Error();

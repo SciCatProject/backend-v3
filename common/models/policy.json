@@ -56,17 +56,6 @@
       ],
       "description": "Array of additional email addresses that should be notified up a retrieval job creation"
     },
-    "copyEmailNotification": {
-        "type": "boolean",
-        "description": "Flag is true when an email notification should be sent to copyEmailsToBeNotified upon a copy job creation",
-        "default": false
-    },
-    "copyEmailsToBeNotified": {
-        "type": [
-          "string"
-        ],
-        "description": "Array of additional email addresses that should be notified up a copy job creation"
-    },
     "embargoPeriod": {
       "type": "number",
       "description": "Number of years after dataset creation before the dataset becomes public",
