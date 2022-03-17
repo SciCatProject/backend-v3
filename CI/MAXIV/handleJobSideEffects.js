@@ -89,7 +89,7 @@ module.exports = (app) => {
   };
     // Populate email context for job submission notification
   const sendStartJobEmail = async (ctx, jobData) => {
-    const jobType = "download";
+    const jobType = "public";
     const to = ctx.instance.emailJobInitiator;
     const emailContext = {
       domainName: config.host,

@@ -177,10 +177,10 @@ module.exports = (app) => {
 
       const emailContext = {
         domainName: config.host,
-        subject: "SciCat: Your download job submitted successfully",
+        subject: `SciCat: Your ${jobType} job submitted successfully`,
         jobSubmissionNotification: {
           jobId: ctx.instance.id,
-          jobType: "download",
+          jobType,
           jobData,
           additionalMsg: "This job is created automatically when you made a request to download some dataset(s)."
         }
@@ -270,10 +270,10 @@ module.exports = (app) => {
           const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
           const emailContext = {
             domainName: config.host,
-            subject: ` SciCat: Your download job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
+            subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
             jobFinishedNotification: {
               jobId,
-              jobType: "download",
+              jobType,
               failure,
               jobStatusMessage,
               datasets: {
