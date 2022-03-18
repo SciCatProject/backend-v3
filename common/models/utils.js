@@ -384,7 +384,7 @@ const isObject = (x) => {
   }
   return false;
 };
-exports.extractMetadataKeys = (datasetArray, metadataField) => {
+exports.extractMetadataKeys = (collections, metadataField) => {
   const keys = new Set();
   //Return nested keys in this structure parentkey.childkey.grandchildkey....
   const flattenKeys = (object, keyStr) => {
@@ -398,8 +398,8 @@ exports.extractMetadataKeys = (datasetArray, metadataField) => {
       }
     });
   };
-  datasetArray.forEach((dataset) => {
-    const metadata = dataset[metadataField];
+  collections.forEach((collection) => {
+    const metadata = collection[metadataField];
     if (metadata) {
       flattenKeys(metadata, "");
     }

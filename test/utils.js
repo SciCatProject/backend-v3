@@ -66,7 +66,7 @@ describe("utils.appendSIUnitToPhysicalQuantity", () => {
 
 describe("utils.extractMetadataKeys", () => {
   it("should return a array of unique keys", () => {
-    const res = utils.extractMetadataKeys([utilsTestData.testData]);
+    const res = utils.extractMetadataKeys([utilsTestData.testData], "scientificMetadata");
     chai.expect(res).to.deep.equal(utilsTestData.extractMetadataKeysExpectedData);
   });
 });
