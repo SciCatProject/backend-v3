@@ -10,20 +10,7 @@ module.exports = function (Sample) {
     function (ctx, unused, next) {
       if ("sampleCharacteristics" in ctx.args.data) {
         const { sampleCharacteristics } = ctx.args.data;
-        Object.keys(sampleCharacteristics).forEach((key) => {
-          if (sampleCharacteristics[key].unit.length > 0) {
-            const { value, unit } = sampleCharacteristics[key];
-            const { valueSI, unitSI } = utils.convertToSI(
-              value,
-              unit
-            );
-            sampleCharacteristics[key] = {
-              ...sampleCharacteristics[key],
-              valueSI,
-              unitSI,
-            };
-          }
-        });
+        utils.appendSIUnitToPhysicalQuantity(sampleCharacteristics);
       }
       next();
     }
@@ -117,29 +104,8 @@ module.exports = function (Sample) {
         logger.logInfo("No samples found", { samples });
       }
 
-      const metadata = samples.map((sample) =>
-        sample.sampleCharacteristics
-          ? Object.keys(sample.sampleCharacteristics)
-          : []
-      );
-
-      logger.logInfo("Raw metadata array", {
-        count: metadata.length,
-      });
-
-      // Flatten array, ensure uniqueness of keys and filter out
-      // blacklisted keys
-      const metadataKeys = [].concat
-        .apply([], metadata)
-        .reduce((accumulator, currentValue) => {
-          if (accumulator.indexOf(currentValue) === -1) {
-            accumulator.push(currentValue);
-          }
-          return accumulator;
-        }, [])
-        .filter((key) => !blacklist.some((regex) => regex.test(key)));
-
-      logger.logInfo("Curated metadataKeys", {
+      const metadataKeys = utils.extractMetadataKeys(samples, "sampleCharacteristics").filter(key => !blacklist.some(regex => regex.test(key)));
+      logger.logInfo("Curated metadataKeys for samples", {
         count: metadataKeys.length,
       });
 
