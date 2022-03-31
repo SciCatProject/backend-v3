@@ -477,7 +477,7 @@ describe("Test New Job Model", () => {
         if (err)
           return done(err);
         // setTimeout(done, 3000);
-        done()
+        done();
       });
   });
   publicJobIds.forEach(jobId => {
