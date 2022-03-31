@@ -22,6 +22,7 @@ RUN npm install --no-optional --only=production
 
 
 COPY . /usr/src/app
+COPY CI/MAXIV/handleJobSideEffects.js /usr/src/app/server/boot/handleJobSideEffects.js
 RUN NODE_ENV=dev
 # Start the app
 CMD ["node", "."]

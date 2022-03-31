@@ -8,7 +8,6 @@ module.exports = (app) => {
   const Job = app.models.Job;
   const jobTypes = Job.types;
   const Dataset = app.models.Dataset;
-  const domainName = process.env.HOST;
   const jobEventEmitter = Job.eventEmitter;
   const markDatasetsAsScheduled = async (ids, jobType) => {
     const statusMessage = { retrieve: "scheduledForRetrieval", archive: "scheduledForArchiving" };
@@ -141,7 +140,6 @@ module.exports = (app) => {
         retrievable: x.datasetlifecycle.retrievable
       }));
       const emailContext = {
-        domainName,
         subject: ` SciCat: Your ${jobType} job submitted successfully`,
         jobSubmissionNotification: {
           jobId: ctx.instance.id,
@@ -176,7 +174,6 @@ module.exports = (app) => {
       }));
 
       const emailContext = {
-        domainName: config.host,
         subject: `SciCat: Your ${jobType} job submitted successfully`,
         jobSubmissionNotification: {
           jobId: ctx.instance.id,
@@ -241,7 +238,6 @@ module.exports = (app) => {
           const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
           const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination." : "";
           const emailContext = {
-            domainName: config.host,
             subject: `SciCat: Your ${jobType} job from ${creationTime} is finished ${failure? "with failure": "successfully"}`,
             jobFinishedNotification: {
               jobId,
@@ -269,7 +265,6 @@ module.exports = (app) => {
           const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
           const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
           const emailContext = {
-            domainName: config.host,
             subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
             jobFinishedNotification: {
               jobId,

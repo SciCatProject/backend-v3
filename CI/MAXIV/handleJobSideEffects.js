@@ -92,7 +92,6 @@ module.exports = (app) => {
     const jobType = "public";
     const to = ctx.instance.emailJobInitiator;
     const emailContext = {
-      domainName: config.host,
       subject: `SciCat: Your ${jobType} job submitted successfully`,
       jobSubmissionNotification: {
         jobId: ctx.instance.id,
@@ -114,16 +113,34 @@ module.exports = (app) => {
         // const ids = currentJobData.datasetList.map(x => x.pid);
         let to = currentJobData.emailJobInitiator;
         const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentJobData;
-        const failure = jobStatusMessage.indexOf("finishedSuccessful") === -1;
+        const failure = jobStatusMessage !== "completed";
         if (jobType === Job.types.PUBLIC) {
           // Split result into good and bad
-          const good = jobResultObject.good;
-          const bad = jobResultObject.bad;
+          const good = jobResultObject.good.reduce((acc, dataset) => {
+            const openAccessPath = dataset.sourceFolder.replace("/data/visitors", "");
+            const downloadLink =  `${config.fileserverBaseURL}&origin_path=${encodeURIComponent(openAccessPath)}`;
+            acc.push({
+              pid: dataset.pid,
+              downloadLink,
+              availableFiles: dataset.availableFiles
+            });
+            return acc;
+          }, []);
+          const bad = jobResultObject.bad.reduce((acc, dataset) => {
+            const openAccessPath = dataset.sourceFolder.replace("/data/visitors", "");
+            const downloadLink = `${config.fileserverBaseURL}&origin_path=${encodeURIComponent(openAccessPath)}`;
+            acc.push({
+              pid: dataset.pid,
+              ...(dataset.availableFiles.length > 0 && { downloadLink }),
+              availableFiles: dataset.availableFiles,
+              unavailableFiles: dataset.unavailableFiles
+            });
+            return acc;
+          }, []);
           // add cc message in case of failure to scicat admin
           const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
           const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
           const emailContext = {
-            domainName: config.host,
             subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
             jobFinishedNotification: {
               jobId,

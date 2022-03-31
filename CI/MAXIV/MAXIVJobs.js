@@ -77,7 +77,7 @@ var testraw = {
   "ownerEmail": "bertram.astor@grumble.com",
   "orcidOfOwner": "unknown",
   "contactEmail": "bertram.astor@grumble.com",
-  "sourceFolder": "/iramjet/tif/",
+  "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
   "size": 0,
   "creationTime": "2011-09-14T06:08:25.000Z",
   "description": "The ultimate test",
@@ -127,8 +127,10 @@ var testPublicJob = {
   ]
 };
 var app;
-before(function () {
+before(function (done) {
   app = require("../server/server");
+  console.log("Waiting for 5 seconds for boot tasks to finish: ",new Date());
+  setTimeout(done,5000);
 });
 
 describe("Test New Job Model", () => {
@@ -269,29 +271,51 @@ describe("Test New Job Model", () => {
     request(app)
       .put("/api/v3/Jobs/" + publicJobIds[0] + "?access_token=" + accessTokenArchiveManager)
       .send({
-        "jobStatusMessage": "finishedUnsuccessful",
+        "jobStatusMessage": "partially_completed",
         "jobResultObject": {
-          "good": [{
-            "pid": decodeURIComponent(pid1),
-            "downloadLink": "Globus link"
-          }],
-          "bad": [{
-            "pid": decodeURIComponent(pid2),
-            "downloadLink": "Globus link",
-            "availableFiles": [{
-              file: "file1.txt",
-              reason: "ok"
-            }, {
-              file: "file2.txt",
-              reason: "ok"
-            }],
-            "unavailableFiles": [{
-              file: "file3.txt",
-              reason: "no space in destination"
-            }],
-          }]
-        }
-      })
+          "good": [
+            {
+              "status": "completed",
+              "pid": decodeURIComponent(pid1),
+              "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
+              "beamline": "BioMAX",
+              "availableFiles": [
+                {
+                  "file": "file1.text"
+                },
+                {
+                  "file": "file2.text"
+                },
+                {
+                  "file": "file3.text"
+                }
+              ],
+              "unavailableFiles": []
+            }
+          ],
+          "bad": [
+            {
+              "status": "partially_completed",
+              "pid": decodeURIComponent(pid2),
+              "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
+              "beamline": "BioMAX",
+              "availableFiles": [
+                {
+                  "file": "file1.txt"
+                }
+              ],
+              "unavailableFiles": [
+                {
+                  "file": "file2.txt",
+                  "reason": "No such file or directory"
+                },
+                {
+                  "file": "file3.txt",
+                  "reason": "No such file or directory"
+                }
+              ]
+            }]
+        } })
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
@@ -317,37 +341,145 @@ describe("Test New Job Model", () => {
           return done(err);
         res.body.should.have.property("type").and.be.string;
         publicJobIds.push(res.body["id"]);
-        setTimeout(done, 3000);
+        // setTimeout(done, 3000);
+        done();
       });
   });
 
   it("Send an update status to the public job request, signal successful job", function (done) {
     request(app)
       .put("/api/v3/Jobs/" + publicJobIds[1] + "?access_token=" + accessTokenArchiveManager)
-      .send({
-        "jobStatusMessage": "finishedSuccessful",
-        "jobResultObject": {
-          "good": [{
-            "pid": decodeURIComponent(pid1),
-            "downloadLink": "Globus link 1"
-          },
-          {
-            "pid": decodeURIComponent(pid2),
-            "downloadLink": "Globus link 2"
-          }],
-          "bad": []
-        }
-      })
+      .send(
+        {
+          "jobStatusMessage": "completed",
+          "jobResultObject": {
+            "good": [
+              {
+                "status": "completed",
+                "pid": decodeURIComponent(pid1),
+                "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
+                "beamline": "BioMAX",
+                "availableFiles": [
+                  {
+                    "file": "file1.txt",
+                  },
+                  {
+                    "file": "file2.txt"
+                  },
+                  {
+                    "file": "file3.txt"
+                  }
+                ],
+                "unavailableFiles": []
+              },
+              {
+                "status": "completed",
+                "pid": decodeURIComponent(pid2),
+                "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
+                "beamline": "BioMAX",
+                "availableFiles": [
+                  {
+                    "file": "file1.txt",
+                  },
+                  {
+                    "file": "file2.txt"
+                  },
+                  {
+                    "file": "file3.txt"
+                  }
+                ],
+                "unavailableFiles": []
+              }
+            ],
+            "bad": []
+
+          }
+        })
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
       .end(function (err, _res) {
         if (err)
           return done(err);
-        setTimeout(done, 3000);
+        // setTimeout(done, 3000);
+        done();
+      });
+  });
+  it("Adds a new public job request", function (done) {
+    request(app)
+      .post("/api/v3/Jobs")
+      .send(testPublicJob)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, res) {
+        if (err)
+          return done(err);
+        res.body.should.have.property("type").and.be.string;
+        publicJobIds.push(res.body["id"]);
+        done();
+        // setTimeout(done, 3000);
       });
   });
 
+  it("Send an update status to the public job request, signal finished job with failure", function (done) {
+    request(app)
+      .put("/api/v3/Jobs/" + publicJobIds[2] + "?access_token=" + accessTokenArchiveManager)
+      .send({
+        "jobStatusMessage": "failed_to_start",
+        "jobResultObject": {
+          "good": [],
+          "bad": [
+            {
+              "status": "failed_to_start",
+              "pid": decodeURIComponent(pid1),
+              "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
+              "beamline": "BioMAX",
+              "availableFiles": [],
+              "unavailableFiles": [
+                {
+                  "file": "file1.text"
+                },
+                {
+                  "file": "file2.text"
+                },
+                {
+                  "file": "file3.text"
+                }
+              ]
+            },
+            {
+              "status": "partially_completed",
+              "pid": decodeURIComponent(pid2),
+              "sourceFolder": "/data/visitors/biomax/20170251/20220223/raw/Tau/Tau-natB1",
+              "beamline": "BioMAX",
+              "availableFiles": [
+                {
+                  "file": "file1.txt"
+                }
+              ],
+              "unavailableFiles": [
+                {
+                  "file": "file2.txt",
+                  "reason": "No such file or directory"
+                },
+                {
+                  "file": "file3.txt",
+                  "reason": "No such file or directory"
+                }
+              ]
+            }]
+        } })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end(function (err, _res) {
+        if (err)
+          return done(err);
+        // setTimeout(done, 3000);
+        done()
+      });
+  });
   publicJobIds.forEach(jobId => {
     it("should delete the public Job" + jobId, function (done) {
       request(app)
