@@ -8,8 +8,9 @@ const unwrapJSON = (json)=> {
   if (typeof json === "number" || typeof json === "string") {
     return json;
   }
+  if (Array.isArray(json) && json.length === 0) return "Empty list";
   if (Array.isArray(json)) {
-    return (
+    return new Handlebars.SafeString(
       "<ul style='padding-left: 1em'>" +
             json
               .map(
