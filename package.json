@@ -23,7 +23,7 @@
     "helmet": "^3.23.3",
     "jsonwebtoken": "^8.5.1",
     "kafka-node": "^5.0.0",
-    "kafkajs": "^1.15.0",
+    "kafkajs": "^1.16.0",
     "loopback": "^3.28.0",
     "loopback-boot": "^2.28.0",
     "loopback-component-explorer": "^6.5.1",
