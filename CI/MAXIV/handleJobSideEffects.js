@@ -109,7 +109,7 @@ module.exports = (app) => {
     ctx.hookState.oldData.forEach(async (oldData) => {
       const currentJobData = await Job.findById(oldData.id, ctx.options);
       //Check that statusMessage has changed. Only run on finished job
-      if (currentJobData.jobStatusMessage != oldData.jobStatusMessage && currentJobData.jobStatusMessage.indexOf("finish") !== -1) {
+      if (currentJobData.jobStatusMessage != oldData.jobStatusMessage && currentJobData.jobStatusMessage.indexOf("jobSubmitted") === -1) {
         // const ids = currentJobData.datasetList.map(x => x.pid);
         let to = currentJobData.emailJobInitiator;
         const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentJobData;
