@@ -234,7 +234,7 @@ module.exports = function (PublishedData) {
 
       const syncOAIPublication = {
         method: "POST",
-        body: pub,
+        body: pub.toJSON(),
         json: true,
         uri: OAIServerUri,
         headers: {
