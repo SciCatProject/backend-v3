@@ -93,7 +93,7 @@ module.exports = (app) => {
       break;
     case jobTypes.RETRIEVE: {
       const { retrieveEmailNotification, retrieveEmailsToBeNotified } = policy;
-      if (retrieveEmailNotification) {
+      if (retrieveEmailsToBeNotified) {
         to += "," + retrieveEmailsToBeNotified.join();
       }
       // Always notify at failure
