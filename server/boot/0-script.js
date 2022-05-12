@@ -62,7 +62,7 @@ module.exports = function (app) {
         console.error();
         console.error("   Warning: your DB contains old ID format   ");
         console.error("   please run the script                     ");
-        console.error("   == catamel/scripts/replaceObjectIds.sh == ");
+        console.error("   == backend/scripts/replaceObjectIds.sh == ");
         console.error("   on your mongo DB !                        ");
         console.error();
         console.error("========================================");

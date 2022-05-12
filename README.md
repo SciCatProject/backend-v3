@@ -8,7 +8,7 @@ For the full documentation please go to the [SciCat home page](https://scicatpro
 ## IMPORTANT!!!
 
 On 2021/11/26, this repository has been renamed to the current name: https://github.com/SciCatProject/backend.
-The previous URL https://github.com/SciCatProject/catamel will still be active and point to the current one. 
+The previous URL https://github.com/SciCatProject/backend will still be active and point to the current one. 
 We kindly suggest to migrate as soon as possible.
 
 Naming within the project will be updated in future releases. More info will be posted as soon as we finalize the details.
