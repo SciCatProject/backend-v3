@@ -64,7 +64,7 @@
     "type": "",
     "url": ""
   },
-  "license": "GPL-3.0",
+  "license": "BSD-3-Clause",
   "description": "dacat-api",
   "snyk": true
 }
