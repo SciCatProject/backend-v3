@@ -8,6 +8,7 @@ const request = require("supertest");
 const should = chai.should();
 const utils = require("./LoginUtils");
 const nock = require("nock");
+const sandbox = require("sinon").createSandbox();
 
 chai.use(chaiHttp);
 
@@ -125,6 +126,11 @@ before(function () {
   app = require("../server/server");
 });
 
+afterEach((done) => {
+  sandbox.restore();
+  done();
+});
+
 describe("Test of access to published data", () => {
   before((done) => {
     utils.getToken(app, {
@@ -182,18 +188,21 @@ describe("Test of access to published data", () => {
     done();
   });
 
-  // actual test
-  /* it("should register this new published data", function (done) {
-        request(app)
-            .post("/api/v3/PublishedData/" + doi + "/register/?access_token=" + accessToken)
-            .set("Accept", "application/json")
-            .expect(200)
-            .expect("Content-Type", /json/)
-            .end((err, res) => {
-                if (err) return done(err);
-                done();
-            });
-    });*/
+  it("should register this new published data", function (done) {
+    const config = require("../server/config.local");
+    sandbox.stub(config, "site").value("PSI");
+    if (config.oaiProviderRoute)
+      sandbox.stub(config, "oaiProviderRoute").value(null);
+    request(app)
+      .post("/api/v3/PublishedData/" + doi + "/register/?access_token=" + accessToken)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err) => {
+        if (err) return done(err);
+        done();
+      });
+  });
 
   it("should fetch this new published data", function (done) {
     request(app)
@@ -201,8 +210,9 @@ describe("Test of access to published data", () => {
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/)
-      .end((err, _res) => {
+      .end((err, res) => {
         if (err) return done(err);
+        res.body.should.have.property("status").and.equal("registered");
         done();
       });
   });
@@ -576,5 +586,4 @@ describe("Test of access to published data", () => {
   });
 
 });
-
 
