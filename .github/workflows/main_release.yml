@@ -24,7 +24,7 @@ jobs:
   new-main-release:
     name: New main release on the main branch and docker image
     runs-on: ubuntu-latest
-    needs: [unittest, e2etests]
+    needs: [test]
     steps:
       - name: Checking release
         run: echo "Releasing version ${{ github.ref_name }}"
