@@ -1,6 +1,7 @@
 "use strict";
 const utils = require("./utils");
 const lodash = require("lodash");
+const escapeStringRegexp = require('escape-string-regexp')
 module.exports = function (MongoQueryableModel) {
 
   // to get access to other models
@@ -743,6 +744,23 @@ module.exports = function (MongoQueryableModel) {
         {
           [`${matchKeyGeneric}.value`]: {
             $eq: rhs,
+          }
+        }
+        ]
+      });
+      break;
+    }
+    case "CONTAINS_STRING": {
+      const escapedRhs = escapeStringRegexp(rhs);
+      match.$and.push({
+        $or: [{
+          [matchKeyGeneric]: {
+            $regex: escapedRhs,
+          }
+        },
+        {
+          [`${matchKeyGeneric}.value`]: {
+            $regex: escapedRhs,
           }
         }
         ]
