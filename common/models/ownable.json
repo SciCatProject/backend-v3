@@ -1,20 +1,11 @@
 {
   "name": "Ownable",
   "description": "This is the base model for all models which 'belong' to entities like pgroups. It is crucial to implemtn a user dependent access control to datasets or other ownable documents.",
-  "base": "PersistedModel",
+  "base": "MongoQueryableModel",
   "strict": true,
-  "idInjection": true,
+  "idInjection": false,
   "options": {
     "validateUpsert": true
-  },
-  "mixins": {
-    "TimeStamp": {
-      "createdAt": "createdAt",
-      "updatedAt": "updatedAt",
-      "required": false,
-      "validateUpsert": true,
-      "silenceWarnings": false
-    }
   },
   "properties": {
     "ownerGroup": {
@@ -30,15 +21,12 @@
       "index": true,
       "description": "Optional additional groups which have read access to the data. Users which are member in one of the groups listed here are allowed to access this data. The special group 'public' makes data available to all users"
     },
-    "createdBy": {
-      "type": "string",
-      "index": true,
-      "description": "Functional or user account name who created this instance"
-    },
-    "updatedBy": {
-      "type": "string",
-      "description": "Functional or user account name who last updated this instance"
-    }
+    "instrumentGroup": {
+        "type":
+          "string",
+        "index": true,
+        "description": "Optional additional groups which have read and write access to the data. Users which are member in one of the groups listed here are allowed to access this data."
+      }
   },
   "validations": [],
   "relations": {},

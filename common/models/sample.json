@@ -3,14 +3,15 @@
     "description": "Models describing the characteristics of the samples to be investigated. Raw datasets should be linked to such sample definitions.",
     "base": "Ownable",
     "strict": true,
-    "idInjection": true,
+    "idInjection": false,
     "options": {
         "validateUpsert": true
     },
     "properties": {
         "sampleId": {
             "type": "string",
-            "id": true
+            "id": true,
+            "defaultFn": "uuidv4"
         },
         "owner": {
             "type": "string"
@@ -36,14 +37,13 @@
             "model": "Attachment",
             "foreignKey": ""
         },
-        "datasets":{
-            "type": "belongsTo",
-            "model": "Dataset",
+        "datasets": {
+            "type": "hasMany",
+            "model": "RawDataset",
             "foreignKey": ""
         }
     },
-    "acls": [
-        {
+    "acls": [{
             "accessType": "READ",
             "principalType": "ROLE",
             "principalId": "$everyone",
@@ -57,32 +57,42 @@
         }
     ],
     "methods": {
-        "fullquery": {
+       "metadataKeys": {
             "accepts": [
                 {
                     "arg": "fields",
                     "type": "object",
-                    "description": "Define the filter conditions by specifying the name of values of fields requested. There is also support for a `text` search to look for strings anywhere in the sample. Skip and limit parameters allow for paging."
+                    "required": false,
+                    "description": "Define the filter conditions by specifying the name of values of fields requested. There is also support for a `text` search to look for strings anywhere in the sample."
                 },
                 {
                     "arg": "limits",
                     "type": "object",
+                    "required": false,
                     "description": "Define further query parameters like skip, limit, order"
                 },
                 {
                     "arg": "options",
                     "type": "object",
+                    "required": false,
                     "http": "optionsFromRequest"
                 }
             ],
-            "returns": {
-                "root": true
-            },
-            "description": "Return samples fulfilling complex filter conditions, including from fields of joined models.",
-            "http": {
-                "path": "/fullquery",
-                "verb": "get"
-            }
-        }
+            "returns": [
+                {
+                    "arg": "metadataKeys",
+                    "type": "array",
+                    "root": true,
+                    "description": "Array of sample characteristic keys"
+                }
+            ],
+            "description": "Get a list of sample characteristic keys",
+            "http": [
+                {
+                    "path": "/metadataKeys",
+                    "verb": "get"
+                }
+            ]
+        }  
     }
 }

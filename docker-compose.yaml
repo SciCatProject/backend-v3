@@ -6,11 +6,11 @@ services:
       - "27017:27017"
     volumes:
       - 'mongodb_data:/bitnami'
-  catamel:
+  scicat-backend:
     build:
       context: .
       dockerfile: CI/ESS/Dockerfile.test
-    image: garethcmurphy/catamel
+    image: scicatproject/backend
     ports:
       - '3000:3000'
     depends_on:
@@ -27,7 +27,7 @@ services:
       container_name: openldap
       hostname: openldap
       environment:
-          LDAP_ORGANISATION: "LDAP Catamel Auth"
+          LDAP_ORGANISATION: "LDAP SciCat Backend Auth"
           LDAP_SSL_HELPER_PREFIX: "ldap"
           LDAP_TLS_VERIFY_CLIENT: "never"
           LDAP_LOG_LEVEL: 256

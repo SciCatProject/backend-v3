@@ -32,8 +32,8 @@ server/datasources.json
 server/datacite.json
 server/functionalAccounts.json
 CI/PSI/envfiles/*
-CI/PSI/catamel-psiconfig/
-CI/PSI/catamel-psisecrets/
+CI/PSI/scicat-backend-psiconfig/
+CI/PSI/scicat-backend-psisecrets/
 client/api/angular2
 client/api/python
 test/config/settings.json
@@ -47,3 +47,6 @@ mongo.sh
 mongo.js
 doiconfig.local.json
 server/config.local.json
+
+# VS Code workspace settings
+.vscode/

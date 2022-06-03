@@ -21,7 +21,7 @@
     "acls": [
       {
         "principalType": "ROLE",
-        "principalId": "$authenticated",
+        "principalId": "$everyone",
         "permission": "ALLOW",
         "property": "jwt"
       },
@@ -147,6 +147,10 @@
   },
   "Technique": {
     "dataSource": "transient",
+    "public": false
+  },
+  "MongoQueryableModel": {
+    "dataSource": "mongo",
     "public": false
   }
 }

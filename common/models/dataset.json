@@ -24,21 +24,21 @@
             "type": "string",
             "required": true,
             "index": true,
-            "description": "Owner of the data set, usually first name + lastname"
+            "description": "Owner or custodian of the data set, usually first name + lastname. The string may contain a list of persons, which should then be seperated by semicolons."
         },
         "ownerEmail": {
             "type": "string",
-            "description": "Email of owner of the data set"
+            "description": "Email of owner or of custodian of the data set. The string may contain a list of emails, which should then be seperated by semicolons."
         },
         "orcidOfOwner": {
             "type": "string",
-            "description": "ORCID of owner https://orcid.org if available"
+            "description": "ORCID of owner/custodian. The string may contain a list of ORCID, which should then be separated by semicolons."
         },
         "contactEmail": {
             "type": "string",
             "required": true,
             "index": true,
-            "description": "Email of contact person for this dataset"
+            "description": "Email of contact person for this dataset. The string may contain a list of emails, which should then be seperated by semicolons."
         },
         "sourceFolder": {
             "type": "string",
@@ -112,6 +112,18 @@
         "isPublished": {
             "type": "boolean",
             "description": "Flag is true when data are made publically available"
+        },
+        "sharedWith": {
+          "type": ["string"],
+          "description": "List of users that the dataset has been shared with"
+        },
+        "dataQualityMetrics": {
+            "type": "number",
+            "description": "Rate the quality of a dataset. The field is only relevant for user working on a given proposal and know what type of data quality this rating refer to. A number between 1-3 that the user could use to rate a dataset. 1 means bad, 2 means good, 3 means very good"
+        },
+        "comments": {
+            "type": "string",
+            "description": "Comment the user has about a given dataset."
         }
     },
     "validations": [],
@@ -146,14 +158,8 @@
             "foreignKey": ""
         },
         "publisheddata": {
-            "type": "belongsTo",
-            "model": "PublishedData",
-            "foreignKey": ""
-        },
-        "samples": {
-            "type": "hasMany",
-            "model": "Sample",
-            "foreignKey": ""
+            "type": "hasAndBelongsToMany",
+            "model": "PublishedData"
         },
         "origdatablocks": {
             "type": "hasMany",
@@ -176,14 +182,16 @@
             "principalId": "$everyone",
             "permission": "ALLOW",
             "property": [
-                "anonymousquery",
                 "find",
                 "findById",
                 "findOne",
                 "fullfacet",
                 "fullquery",
                 "metadataKeys",
-                "thumbnail"
+                "thumbnail",
+                "__get__origdatablocks",
+                "__get__datablocks",
+                "__get__attachments"
             ]
         },
         {
@@ -226,37 +234,69 @@
                 "verb": "put"
             }
         },
-        "fullfacet": {
+        "reduceDataset": {
             "accepts": [{
-                    "arg": "fields",
-                    "type": "object",
-                    "description": "Define the filter conditions by specifying the name and values of fields. There ia also support for a `text` search to look for strngs anywhere in the dataset."
+                "arg": "dataset",
+                "type": "Dataset",
+                "required": true,
+                "description": "The Dataset to send for reduction",
+                "http": {
+                    "source": "body"
+                }
+            }],
+            "returns": [{
+                "arg": "reduceDataset",
+                "type": "object",
+                "root": true,
+                "description": "The response from the OpenWhisk reduce action"
+            }],
+            "description": "Sends a post request for Dataset reduction to OpenWhisk",
+            "http": [{
+                "path": "/reduce",
+                "verb": "post"
+            }]
+        },
+        "appendToArrayField": {
+            "accepts": [{
+                    "arg": "id",
+                    "type": "string",
+                    "required": true
                 },
                 {
-                    "arg": "facets",
+                    "arg": "fieldName",
+                    "type": "string",
+                    "required": true,
+                    "description": "Name of field to append data to"
+                },
+                {
+                    "arg": "data",
                     "type": "array",
-                    "description": "Defines list of field names, for which facet counts should be calculated"
+                    "required": true,
+                    "description": "An array of values to append"
                 },
                 {
                     "arg": "options",
                     "type": "object",
-                    "http": "optionsFromRequest"
+                    "http": {
+                        "source": "context"
+                    }
                 }
             ],
+            "http": {
+                "path": "/:id/appendToArrayField",
+                "verb": "post"
+            },
             "returns": {
+                "type": "Object",
                 "root": true
             },
-            "description": "Return facet counts relevant for the given selected subset of datasets. ",
-            "http": {
-                "path": "/fullfacet",
-                "verb": "get"
-            }
+            "description": "updates a single record by appending data to the specified field"
         },
-        "fullquery": {
+        "metadataKeys": {
             "accepts": [{
                     "arg": "fields",
                     "type": "object",
-                    "description": "Define the filter conditions by specifying the name of values of fields requested. There ia also support for a `text` search to look for strings anywhere in the dataset. Skip and limit parameters allow for paging."
+                    "description": "Define the filter conditions by specifying the name of values of fields requested. There is also support for a `text` search to look for strings anywhere in the dataset."
                 },
                 {
                     "arg": "limits",
@@ -272,37 +312,27 @@
             "returns": {
                 "root": true
             },
-            "description": "Return datasets fulfilling complex filter conditions, including from fields of joined models.",
+            "description": "Return array of metadata keys from datasets corresponding to the current filters.",
             "http": {
-                "path": "/fullquery",
+                "path": "/metadataKeys",
                 "verb": "get"
             }
         },
-        "anonymousquery": {
+        "thumbnail": {
             "accepts": [{
-                    "arg": "fields",
-                    "type": "object",
-                    "description": "Define the filter conditions by specifying the name of values of fields requested. There ia also support for a `text` search to look for strings anywhere in the dataset. Skip and limit parameters allow for paging."
-                },
-                {
-                    "arg": "limits",
-                    "type": "object",
-                    "description": "Define further query parameters like skip, limit, order"
-                },
-                {
-                    "arg": "options",
-                    "type": "object",
-                    "http": "optionsFromRequest"
-                }
-            ],
-            "returns": {
-                "root": true
-            },
-            "description": "Return datasets fulfilling complex filter conditions, including from fields of joined models.",
+                "arg": "id",
+                "type": "string",
+                "required": true
+            }],
             "http": {
-                "path": "/anonymousquery",
+                "path": "/:id/thumbnail",
                 "verb": "get"
+            },
+            "returns": {
+                "type": "string",
+                "root": true
             }
         }
+
     }
 }

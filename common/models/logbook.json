@@ -33,9 +33,33 @@
       "principalType": "ROLE",
       "principalId": "$authenticated",
       "permission": "ALLOW"
+    },
+    {
+      "accessType": "EXECUTE",
+      "principalType": "ROLE",
+      "principalId": "$everyone",
+      "permission": "DENY",
+      "property": "sendMessage"
     }
   ],
   "methods": {
+    "find": {
+      "returns": [
+        {
+          "arg": "logbooks",
+          "type": "array",
+          "root": true,
+          "description": "Array of Logbook model instances"
+        }
+      ],
+      "description": "Find Logbook model instances",
+      "http": [
+        {
+          "path": "/",
+          "verb": "get"
+        }
+      ]
+    },
     "findByName": {
       "accepts": [
         {
@@ -46,17 +70,26 @@
           "http": {
             "source": "path"
           }
+        },
+        {
+          "arg": "filters",
+          "type": "string",
+          "required": false,
+          "description": "Filter json object, keys: textSearch, showBotMessages, showUserMessages, showImages, skip, limit, sortField",
+          "http": {
+            "source": "query"
+          }
         }
       ],
       "returns": [
         {
-          "arg": "findByName",
-          "type": "Logbook",
+          "arg": "logbook",
+          "type": "object",
           "root": true,
           "description": "Logbook model instance"
         }
       ],
-      "description": "Find Logbook model instance",
+      "description": "Find Logbook model instance by name",
       "http": [
         {
           "path": "/:name",
@@ -64,58 +97,40 @@
         }
       ]
     },
-    "findAll": {
-      "accepts": [],
-      "returns": [
-        {
-          "arg": "findAll",
-          "type": "[Logbook]",
-          "root": true,
-          "description": "Array of Logbook model instances"
-        }
-      ],
-      "description": "Find all Logbook model instances",
-      "http": [
-        {
-          "path": "/",
-          "verb": "get"
-        }
-      ]
-    },
-    "filter": {
+    "sendMessage": {
       "accepts": [
         {
           "arg": "name",
           "type": "string",
           "required": true,
-          "description": "The name of the Logbook",
+          "description": "Name of the Logbook",
           "http": {
             "source": "path"
           }
         },
         {
-          "arg": "filters",
-          "type": "string",
+          "arg": "data",
+          "type": "object",
           "required": true,
-          "description": "Filter rison object, keys: textSearch, showBotMessages, showUserMessages, showImages, skip, limit, sortField",
+          "description": "JSON object with the key `message`",
           "http": {
-            "source": "path"
+            "source": "body"
           }
         }
       ],
       "returns": [
         {
-          "arg": "filteredLogbook",
-          "type": "Logbook",
+          "arg": "eventId",
+          "type": "object",
           "root": true,
-          "description": "Filtered Logbook model instance"
+          "description": "Object containing the event id of the message"
         }
       ],
-      "description": "Filter Logbook entries matching query",
+      "description": "Send message to a Logbook",
       "http": [
         {
-          "path": "/:name/:filters",
-          "verb": "get"
+          "path": "/:name/message",
+          "verb": "post"
         }
       ]
     }
