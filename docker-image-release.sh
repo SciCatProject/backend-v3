@@ -21,7 +21,7 @@ displayHelp() {
     echo "             If not specified, the docker imag ewill be tagged with "
     echo "             the git branch name followed by git tag, separted by dash"
     echo "             Example:"
-    echo "             - develop-5d5f42af1ca6816a13b6db60b4778388dc4bf431"
+    echo "             - master-5d5f42af1ca6816a13b6db60b4778388dc4bf431"
     echo " -d        : dry run. Check and print arguments and commands but does not take any action"
     echo ""
 }
@@ -74,7 +74,6 @@ done
 # githut repository = https://github.com/scicatproject/frontend.git
 # available branches
 # - master,
-# - develop
 
 
 gitRepo="$(git branch --show-current)"
