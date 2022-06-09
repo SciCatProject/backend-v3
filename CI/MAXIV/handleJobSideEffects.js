@@ -17,9 +17,9 @@ module.exports = (app) => {
     const subject = emailContext.subject;
     utils.sendMail(to, cc, subject, null, null, null, email);
   };
-    /**
-     * Create an object containing information about datasets that should be copied to public storage.
-     * */
+  /**
+   * Create an object containing information about datasets that should be copied to public storage.
+   * */
   const getFilesToCopy = async (ctx) => {
     const datasetsWithSelectedFiles = [];
     const datasetsWithAllFiles = [];
@@ -38,7 +38,7 @@ module.exports = (app) => {
         "sourceFolder": true,
         "creationLocation": true,
         "datasetId": true,
-        "dataFileList":true
+        "dataFileList": true
       },
       where: {
         pid: {
@@ -87,7 +87,7 @@ module.exports = (app) => {
       console.log("Error getting file list for copy job", e);
     }
   };
-    // Populate email context for job submission notification
+  // Populate email context for job submission notification
   const sendStartJobEmail = async (ctx, jobData) => {
     const jobType = "public";
     const to = ctx.instance.emailJobInitiator;
@@ -102,7 +102,7 @@ module.exports = (app) => {
     };
     sendEmail(to, "", emailContext);
   };
-    // Populate email context for finished job notification
+  // Populate email context for finished job notification
   const sendFinishJobEmail = async (ctx) => {
     // Iterate through list of jobs that were updated
     // Iterate in case of bulk update send out email to each job
@@ -118,7 +118,7 @@ module.exports = (app) => {
           // Split result into good and bad
           const good = jobResultObject.good.reduce((acc, dataset) => {
             const openAccessPath = dataset.sourceFolder.replace("/data/visitors", "");
-            const downloadLink =  `${config.fileserverBaseURL}&origin_path=${encodeURIComponent(openAccessPath)}`;
+            const downloadLink = `${config.fileserverBaseURL}&origin_path=${encodeURIComponent(openAccessPath)}`;
             acc.push({
               pid: dataset.pid,
               downloadLink,
@@ -159,10 +159,11 @@ module.exports = (app) => {
       }
     });
   };
-    //Run on new job only
+  //Run on new job only
   const publishJob = async (ctx) => {
     // Only trigger on public job since MAXIV doesn't have other jobs
     if (ctx.instance.type === Job.types.PUBLIC) {
+      if (!config.jobKafkaProducer.enabled) return;
       const jobData = await getFilesToCopy(ctx);
       const kafka = new Kafka(config.jobKafkaProducer.config);
       const producer = kafka.producer();
