@@ -17,8 +17,6 @@ RUN chown -R node:node /home/node/app
 USER node
 
 # Install our packages
-RUN npm config set registry http://registry.npmjs.org/
-RUN npm config set strict-ssl false
 RUN npm ci --only=production
 
 # Copy the rest of our application, node_modules is ignored via .dockerignore
