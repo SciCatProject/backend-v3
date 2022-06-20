@@ -21,7 +21,7 @@ jobs:
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    need: [test]
+    needs: [test]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && github.repository_owner == 'SciCatProject'
     steps:
       - name: Checkout
