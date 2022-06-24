@@ -352,10 +352,9 @@ module.exports = function(Dataset) {
       // sourceFolder handling
       if (ctx.instance.sourceFolder) {
         // remove trailing slashes
-        ctx.instance.sourceFolder = ctx.instance.sourceFolder.replace(
-          /\/$/,
-          ""
-        );
+        if (ctx.instance.sourceFolder !== "/") {
+          ctx.instance.sourceFolder = ctx.instance.sourceFolder.replace(/\/$/,"");
+        }
         // autofill datasetName
         if (!ctx.instance.datasetName) {
           var arr = ctx.instance.sourceFolder.split("/");
