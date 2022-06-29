@@ -91,6 +91,22 @@ describe("Simple Dataset tests", () => {
         done();
       });
   });
+  
+  it("should fail fetching this new dataset", function(done) {
+    request(app)
+      .get("/api/v3/Datasets/" + pid)
+      .set("Accept", "application/json")
+      .expect(403)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        res.body.should.have.property("error");
+        res.body.error.should.have.property("statusCode").and.equal(403);
+        res.body.error.should.have.property("name").and.equal("Error");
+        res.body.error.should.have.property("message").and.equal("Dataset is not public");
+        done();
+      });
+  });
 
   it("should add a new attachment to this dataset", function(done) {
     const testAttachment = {
