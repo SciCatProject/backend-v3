@@ -246,23 +246,33 @@ module.exports = function (PublishedData) {
         console.log("posting to datacite");
         console.log(registerDataciteMetadataOptions);
         console.log(registerDataciteDoiOptions);
-        
+
         (async () => {
+          let res;
           try {
-            const res = await utils.superagent(registerDataciteMetadataOptions);
+            res = await utils.superagent(registerDataciteMetadataOptions);
+          } catch (err1) {
+            console.error("ERROR REGISTERING METADATA", err1);
+            return cb(err1);
+          }
+          try {
             await utils.superagent(registerDataciteDoiOptions);
-            
+          } catch (err2) {
+            console.error("ERROR REGISTERING DOI", err2);
+            return cb(err2);
+          }
+
+          try {
             PublishedData.update(where, data, function (err) {
               if (err) {
                 return cb(err);
               }
             });
-
-            return cb(null,res);
-
-          } catch (error) {
-            return cb(error);
+          } catch (err3) {
+            console.error("ERROR UPDATING PUBLISHED DATA", err3);
+            return cb(err3);
           }
+          return cb(null, res);
         })();
 
       } else if (!config.oaiProviderRoute) {
@@ -275,7 +285,7 @@ module.exports = function (PublishedData) {
           null, "results not pushed to oaiProvider as oaiProviderRoute route is not specified in config.local"
         );
       } else {
-        
+
         (async () => {
           try {
             const res = await utils.superagent(syncOAIPublication);
@@ -284,9 +294,9 @@ module.exports = function (PublishedData) {
                 return cb(err);
               }
             });
-  
-            return cb(null,res);
-  
+
+            return cb(null, res);
+
           } catch (error) {
             return cb(error);
           }
@@ -330,9 +340,9 @@ module.exports = function (PublishedData) {
       body: data,
       json: true,
       uri:
-                OAIServerUri +
-                "/" +
-                encodeURIComponent(encodeURIComponent(doi)),
+        OAIServerUri +
+        "/" +
+        encodeURIComponent(encodeURIComponent(doi)),
       headers: {
         "content-type": "application/json;charset=UTF-8",
       },
@@ -342,18 +352,18 @@ module.exports = function (PublishedData) {
     const where = {
       doi: doi,
     };
-    
+
     (async () => {
       try {
         const res = await utils.superagent(resyncOAIPublication);
-        
+
         PublishedData.update(where, { $set: data }, function (err) {
           if (err) {
             return cb(err);
           }
         });
 
-        return cb(null,res);
+        return cb(null, res);
 
       } catch (error) {
         return cb(error);
