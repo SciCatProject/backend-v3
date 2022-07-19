@@ -27,8 +27,7 @@ before(function() {
     else
       u = instance;
 
-    app.models.UserIdentity.findOrCreate({
-      where: { userId: u.id }
+    app.models.UserIdentity.findOrCreate({ where: { userId: u.id }
     }, {
       userId: u.id,
       profile: {
@@ -95,10 +94,15 @@ describe("Access groups test", function() {
   });
 });
 
-after(function() {
+afterEach(function() {
   userIdentity.profile = {
     username: u.username,
     email: u.email,
   };
   userIdentity.save();
+});
+
+after(function() {
+  u.destroy();
+  userIdentity.destroy();
 });
