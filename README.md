@@ -21,7 +21,7 @@ In case you have questions, please contact the SciCat team at ESS:
 
 ## How to start the backend locally?
 
-In the project directory, you can run: `npm run prepare:start` to prepare all the configuration and run all needed docker containers. After that app you need to do is `npm run start`
+In the project directory, you can run: `npm run prepare:start` to prepare all the configuration and run all needed docker containers. After that all you need to do is `npm run start`
 
 ## License
 
