@@ -1,4 +1,5 @@
 # SciCat Metadata API Server
+
 [![Build Status](https://github.com/SciCatProject/catamel/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/SciCatProject/catamel/actions)
 [![DeepScan grade](https://deepscan.io/api/teams/8394/projects/20871/branches/581451/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=8394&pid=20871&bid=581451)
 [![Known Vulnerabilities](https://snyk.io/test/github/SciCatProject/catamel/master/badge.svg?targetFile=package.json)](https://snyk.io/test/github/SciCatProject/catamel/master?targetFile=package.json)
@@ -8,14 +9,19 @@ For the full documentation please go to the [SciCat home page](https://scicatpro
 ## IMPORTANT!!!
 
 On 2021/11/26, this repository has been renamed to the current name: https://github.com/SciCatProject/backend.
-The previous URL https://github.com/SciCatProject/backend will still be active and point to the current one. 
+The previous URL https://github.com/SciCatProject/backend will still be active and point to the current one.
 We kindly suggest to migrate as soon as possible.
 
 Naming within the project will be updated in future releases. More info will be posted as soon as we finalize the details.
 
 In case you have questions, please contact the SciCat team at ESS:
-- Max Novelli
-- Henrik Johansson
+
+-   Max Novelli
+-   Henrik Johansson
+
+## How to start the backend locally?
+
+In the project directory, you can run: `npm run prepare:start` to prepare all the configuration and run all needed docker containers. After that app you need to do is `npm run start`
 
 ## License
 

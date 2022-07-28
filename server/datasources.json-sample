@@ -1,16 +1,18 @@
 {
     "mongo": {
-    "host": "localhost",
-    "port": 27017,
-    "url": "",
-    "database": "dacat",
-    "name": "mongo",
-    "connector": "mongodb",
-    "useNewUrlParser": true,
-    "allowExtendedOperators":true
-  },
-  "transient": {
-    "name": "transient",
-    "connector": "transient"
-  }
+        "host": "localhost",
+        "port": 27017,
+        "url": "",
+        "database": "dacat",
+        "password": "",
+        "name": "mongo",
+        "user": "",
+        "connector": "mongodb",
+        "useNewUrlParser": true,
+        "allowExtendedOperators": true
+    },
+    "transient": {
+        "name": "transient",
+        "connector": "transient"
+    }
 }
