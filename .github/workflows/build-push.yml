@@ -5,6 +5,21 @@ on:
     branches: [master]
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: test
+        run: |
+          cp CI/ESS/docker-compose.gitlab.yaml docker-compose.yaml
+          docker-compose down --remove-orphans
+          docker-compose pull
+          docker-compose up --build --exit-code-from scicat-backend
+          docker-compose down
+          
   build:
     name: Build and push Docker image with latest tag
     runs-on: ubuntu-latest
