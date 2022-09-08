@@ -165,7 +165,10 @@ module.exports = function (app) {
               if (!u.profile.accessGroups) {
                 groups = [];
               } else if (u.profile.accessGroups instanceof Array) {
-                groups = u.profile.accessGroups.concat(u.profile.email);
+                groups = u.profile.accessGroups;
+                if (u.profile.email !== undefined){
+                  groups = u.profile.accessGroups.concat(u.profile.email);
+                }
               } else {
                 return next(new Error("accessGroups type mismatch"));
               }
