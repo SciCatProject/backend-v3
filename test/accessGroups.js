@@ -160,8 +160,9 @@ describe("Access groups test", function () {
     datasetResponse.statusCode.should.equal(200);
   });
 
-  it("Makes a request with an undefined profile email and does not get a dataset with an undefined intrumentGroup but with different accessGroups", async function () {
-    userIdentity.profile.email = [];
+  it("Makes a request with an undefined profile email and does not get a dataset with an undefined sharedWith but with different accessGroups", async function () {
+    userIdentity.profile.email = undefined;
+    userIdentity.profile.accessGroups = [];
     userIdentity.save();
 
     userIdentity2.profile.accessGroups = ["excludeNoGroup"];
