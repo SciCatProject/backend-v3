@@ -1,32 +1,24 @@
 "use strict";
-const amqp = require("amqplib");
+const { RabbitMQMessageBroker } =  require("@user-office-software/duo-message-broker");
 const config = require("../config.local");
 const logger = require("../../common/logger");
-const utils = require("../../common/models/utils");
 
 module.exports = async function (app) {
   const Proposal = app.models.Proposal;
   let connectionDetails;
 
-  const startConsumer = async (connection) => {
+  const startConsumer = async (rabbitMq) => {
     try {
-      const channel = await connection.createChannel();
-      await channel.assertExchange("useroffice.fanout", "fanout", { durable: true });
-      const queueName = await channel.assertQueue("", { exclusive: true });
-      await channel.bindQueue(queueName.queue, "useroffice.fanout", "");
-      channel.prefetch(1);
-
-      logger.logInfo("RABBITMQ Waiting for messages", {
-        queue: queueName.queue
-      });
-
-      await channel.consume(queueName.queue, async (msg) => {
+      await rabbitMq.listenOn(config.rabbitmq.queue, async (type, message) => {
         try {
-          const payload = JSON.parse(msg.content);
-          logger.logInfo("Message properties", JSON.stringify(msg.properties).toString());
-          logger.logInfo("Message body", JSON.stringify(payload).toString());
-          switch (msg.properties.type) {
-          case "PROPOSAL_ACCEPTED": {
+          switch (type) {
+          case "PROPOSAL_STATUS_CHANGED_BY_WORKFLOW":
+          case "PROPOSAL_STATUS_CHANGED_BY_USER": {
+
+            // If the status is different then the trigger status then skip the proposal creation
+            if (message.newStatus !== config.proposalCreationStatusTrigger) {
+              return;
+            }
             /* 
                     from useroffice code, courtesy of Jekabs
                     msgJSON
@@ -46,28 +38,29 @@ module.exports = async function (app) {
                           lastName
                           email
                         }
+                        newStatus
                       properties
                         type -> event type
                   */
             logger.logInfo(
-              "RabbitMq message for PROPOSAL_ACCEPTED",
+              "RabbitMq message for " + type,
               {
-                message: payload
+                message: message
               }
             );
             /*
-                    We need to refactor proposal fields to match scicat
-                    */
+              We need to refactor proposal fields to match scicat
+            */
             let proposalData = {
-              "proposalId": payload.shortCode,
-              "title": payload.title,
-              "pi_email": payload.proposer.email,
-              "pi_firstname": payload.proposer.firstName,
-              "pi_lastname": payload.proposer.lastName,
-              "email": payload.proposer.email,
-              "firstname": payload.proposer.firstName,
-              "lastname": payload.proposer.lastName,
-              "abstract": payload.asbtract,
+              "proposalId": message.shortCode,
+              "title": message.title,
+              "pi_email": message.proposer.email,
+              "pi_firstname": message.proposer.firstName,
+              "pi_lastname": message.proposer.lastName,
+              "email": message.proposer.email,
+              "firstname": message.proposer.firstName,
+              "lastname": message.proposer.lastName,
+              "abstract": message.asbtract,
               "ownerGroup": "ess",
               "createdBy": "proposalIngestor"
             };
@@ -91,11 +84,9 @@ module.exports = async function (app) {
                 }
               }
             });
-            channel.ack(msg);
             break;
           }
           default: {
-            channel.ack(msg);
             break;
           }
           }
@@ -111,78 +102,30 @@ module.exports = async function (app) {
     } catch (error) {
       logger.logError(error.message, {
         location: "startConsumer",
-        connection
+        rabbitMq
       });
     }
   };
 
-  const sendNotificationEmail = () => {
-    if ("smtpMessage" in config && "to" in config.smtpMessage && config.smtpMessage.to) {
-      const subjectText = "Failed to connect to RabbitMQ";
-      let mailText = "Hello,\n Scicat backend failed to connect to RabbitMQ\n";
-      mailText += "Connection details:\n";
-      mailText += JSON.stringify(connectionDetails, null, 3);
-      utils.sendMail(config.smtpMessage.to, "", subjectText, mailText, null, null);
-    } else {
-      logger.logWarn("smtpMessage is not configured properly no email was sent", {
-        location: "sendNotificationEmail"
-      });
-    }
-  };
-
-  let connectionAttempts = 0;
   const connect = async () => {
-    await amqp.connect(connectionDetails, async function (error, connection) {
-      if (error) {
-        logger.logError(error.message, {
-          location: "amqp.connect",
-          connectionDetails
-        });
-        if (connectionAttempts < config.rabbitmq.maxReconnectionAttempts) {
-          console.log("RABBITMQ - Connection attempt " + connectionAttempts);
-          connectionAttempts++;
-          // try to connect again after some amount of time
-          return setTimeout(connect, config.rabbitmq.reconnectionInterval, connectionDetails);
-        }
-        console.log("RABBITMQ - Unable to connect");
-        sendNotificationEmail();
-        return;
-      }
-      connection.on("error", (error) => {
-        logger.logError(error.message, {
-          location: "connection.on error",
-        });
-      });
-      connection.on("close", () => {
-        logger.logError("RABBITMQ - Reconnecting", {
-          location: "connection.on close",
-        });
-        if (connectionAttempts < config.rabbitmq.maxReconnectionAttempts) {
-          console.log("RABBITMQ - Connection attempt " + connectionAttempts);
-          connectionAttempts++;
-          // try to connect again after some amount of time
-          return setTimeout(connect, config.rabbitmq.reconnectionInterval, connectionDetails);
-        }
-        console.log("RABBITMQ - Unable to reconnect");
-        sendNotificationEmail();
-        return;
-      });
-      console.log("RABBITMQ - Connected");
-      connectionAttempts = 0;
-      await startConsumer(connection);
+    const rabbitMq = new RabbitMQMessageBroker();
+
+    await rabbitMq.setup({
+      hostname: connectionDetails.hostname,
+      username: connectionDetails.username,
+      password: connectionDetails.password,
     });
+
+    await startConsumer(rabbitMq);
   };
 
   const rabbitMqEnabled = config.rabbitmq ? config.rabbitmq.enabled : false;
   if (rabbitMqEnabled) {
     if (config.rabbitmq.host) {
       connectionDetails = {
-        protocol: "amqp",
         hostname: config.rabbitmq.host,
         username: config.rabbitmq.username,
         password: config.rabbitmq.password,
-        heartbeat: 60,
-        vhost: ("vhost" in config.rabbitmq) ? config.rabbitmq.vhost : "/",
       };
       if (config.rabbitmq.port) {
         connectionDetails = { ...connectionDetails, port: config.rabbitmq.port };
