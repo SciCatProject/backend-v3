@@ -14,7 +14,7 @@ var u2;
 var userIdentity;
 var userIdentity2;
 
-var testUndefinedInstrumentGroup = {
+var testUndefinedSharedWith = {
   "principalInvestigator": "bertram.astor@grumble.com",
   "endTime": "2011-09-14T06:31:25.000Z",
   "creationLocation": "/PSI/SLS/MX",
@@ -179,7 +179,7 @@ describe("Access groups test", function () {
 
     await request(app)
       .post("/api/v3/RawDatasets?access_token=" + hasGroupLoginResponse.body.id)
-      .send(testUndefinedInstrumentGroup)
+      .send(testUndefinedSharedWith)
       .set("Accept", "application/json")
       .expect(200)
       .expect("Content-Type", /json/);

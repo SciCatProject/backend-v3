@@ -166,12 +166,10 @@ module.exports = function (app) {
                 groups = [];
               } else if (u.profile.accessGroups instanceof Array) {
                 groups = u.profile.accessGroups;
-                if (u.profile.email !== undefined){
-                  groups = u.profile.accessGroups.concat(u.profile.email);
-                }
               } else {
                 return next(new Error("accessGroups type mismatch"));
               }
+              groups.push(u.profile.email || "empty.mail@loopback-scicatproject");
               // check if a normal user or an internal ROLE
               if (typeof groups === "undefined") {
                 groups = [];
