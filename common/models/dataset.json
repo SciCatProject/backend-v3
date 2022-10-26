@@ -95,6 +95,7 @@
         },
         "datasetName": {
             "type": "string",
+            "index": true,
             "description": "A name for the dataset, given by the creator to carry some semantic meaning. Useful for display purposes e.g. instead of displaying the pid. Will be autofilled if missing using info from sourceFolder"
         },
         "classification": {
@@ -111,6 +112,7 @@
         },
         "isPublished": {
             "type": "boolean",
+            "index": true,
             "description": "Flag is true when data are made publically available"
         },
         "sharedWith": {
