@@ -77,11 +77,15 @@ module.exports = function (Logbook) {
      * @returns {Logbook} Logbook model instance
      */
 
-  Logbook.findByName = async function (name, filters = "{}") {
+  Logbook.findByName = findsByNameCommon;
+
+  Logbook.findDatasetLogbook = findsByNameCommon;
+
+  async function findsByNameCommon(name, filters = "{}") {
     if (logbookEnabled) {
       try {
         const accessToken = await login(username, password);
-        logger.lofInfo("Fetching logbook", { name, filters });
+        logger.logInfo("Fetching logbook", { name, filters });
         const res = await superagent
           .get(
             baseUrl +
@@ -221,7 +225,9 @@ async function getUserProposalIds(userId) {
       proposals = await Proposal.find();
     } else {
       proposals = await Proposal.find({
-        where: { ownerGroup: { inq: options.currentGroups } },
+        where: { 
+          ownerGroup: { inq: options.currentGroups },
+        }
       });
     }
     return proposals.map((proposal) => proposal.proposalId);

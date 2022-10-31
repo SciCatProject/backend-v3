@@ -332,7 +332,44 @@
                 "type": "string",
                 "root": true
             }
+        },
+        "logbook": {
+            "accepts": [
+                {
+                    "arg": "id",
+                    "type": "string",
+                    "required": true,
+                    "description": "Dataset pid",
+                    "http": {
+                      "source": "path"
+                    }          
+                },
+                {
+                  "arg": "filters",
+                  "type": "string",
+                  "required": false,
+                  "description": "Filter json object, keys: textSearch, showBotMessages, showUserMessages, showImages, skip, limit, sortField",
+                  "http": {
+                    "source": "query"
+                  }
+                }
+            ],
+            "returns": [
+                {
+                    "arg": "logbook",
+                    "type": "object",
+                    "root": true,
+                    "description": "Logbook model instance associated with dataset"
+                }
+            ],
+            "description": "Find Logbook model instance associated with dataset",
+            "http": [
+                {
+                    "path": "/:id/logbook",
+                    "verb": "get"
+                }
+            ]
         }
-
+      
     }
 }
