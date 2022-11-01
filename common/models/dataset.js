@@ -679,12 +679,12 @@ module.exports = function (Dataset) {
     }
   };
 
-  Dataset.logbook = async function (id, filters = "{}" ) {
+  Dataset.logbook = async function (id, filters = "{}") {
     const Logbook = app.models.Logbook;
 
     // returns logbook associated with dataset
-    const ds = await Dataset.findById(id)
-    
+    const ds = await Dataset.findById(id);
+
     // the logbook chat has the same name as the proposal id
     return Logbook.findDatasetLogbook(ds.proposalId, filters);
   };

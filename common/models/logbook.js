@@ -116,7 +116,7 @@ module.exports = function (Logbook) {
       }
     }
     return [];
-  };
+  }
 
   /**
      * Send message to a Logbook
