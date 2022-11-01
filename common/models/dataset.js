@@ -389,17 +389,17 @@ module.exports = function (Dataset) {
             // Case 1: classification undefined but policy defined:, define classification via policy
             let classification = "";
             switch (policyInstance.tapeRedundancy) {
-              case "low":
-                classification = "IN=medium,AV=low,CO=low";
-                break;
-              case "medium":
-                classification = "IN=medium,AV=medium,CO=low";
-                break;
-              case "high":
-                classification = "IN=medium,AV=high,CO=low";
-                break;
-              default:
-                classification = "IN=medium,AV=low,CO=low";
+            case "low":
+              classification = "IN=medium,AV=low,CO=low";
+              break;
+            case "medium":
+              classification = "IN=medium,AV=medium,CO=low";
+              break;
+            case "high":
+              classification = "IN=medium,AV=high,CO=low";
+              break;
+            default:
+              classification = "IN=medium,AV=low,CO=low";
             }
             ctx.instance.classification = classification;
           }

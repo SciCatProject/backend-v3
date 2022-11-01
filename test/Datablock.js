@@ -266,7 +266,7 @@ describe("Test Datablocks and OrigDatablocks and their relation to raw Datasets"
     for (const item of array) {
       await deleteDatablock(item);
     }
-    // console.log("==== Finishing all deletes")
+    console.log("==== Finishing all deletes");
   }
 
   it("remove potentially existing datablocks to guarantee uniqueness", function (done) {
@@ -282,7 +282,7 @@ describe("Test Datablocks and OrigDatablocks and their relation to raw Datasets"
       .end((err, res) => {
         if (err)
           return done(err);
-        // console.log(" ==================== Found existing datablocks:", res.body)
+        console.log(" ==================== Found existing datablocks:", res.body);
         // now remove all these entries
         processArray(res.body);
         done();
