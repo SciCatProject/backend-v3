@@ -117,6 +117,7 @@
         },
         "sharedWith": {
           "type": ["string"],
+          "index": true,
           "description": "List of users that the dataset has been shared with"
         },
         "dataQualityMetrics": {
