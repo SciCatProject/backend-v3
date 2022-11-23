@@ -128,7 +128,7 @@ exports.createNewFacetPipeline = function (name, type, query) {
       }
     }
   };
-  if (type === "date") {
+  if (type === "Date") {
     grp.$group._id = {
       year: {
         $year: "$" + name

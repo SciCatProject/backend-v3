@@ -202,6 +202,21 @@ describe("Simple Dataset tests", () => {
         done();
       });
   });
+  
+  it("should contain an array of facets aggregated by creationTime %Y-%m-%d", function(done) {
+    const facets = ["type","creationTime"];
+    request(app)
+      .get(`/api/v3/Datasets/fullfacet?access_token=${accessToken}&facets=${JSON.stringify(facets)}`)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        res.body.should.be.an("array");
+        res.body[0].creationTime[0]._id.should.be.eql({ year:2011,month:9,day:14 });
+        done();
+      });
+  });
 
   it("should delete this dataset", function(done) {
     request(app)
