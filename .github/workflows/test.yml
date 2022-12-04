@@ -2,39 +2,24 @@ name: Test
 
 on:
   pull_request:
-    branches: 
+    branches:
       - master
+
 jobs:
   test:
-    name: Run tests
+    name: Test and build image on PR
     runs-on: ubuntu-latest
-    steps:  
+    steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
-          
-      - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci
+        uses: actions/checkout@v2
 
-      - name: Test
+      - name: test
         run: |
           cp CI/ESS/docker-compose.gitlab.yaml docker-compose.yaml
           docker-compose down --remove-orphans
           docker-compose pull
           docker-compose up --build --exit-code-from scicat-backend
           docker-compose down
-          
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
       - name: Build
         uses: docker/build-push-action@v3
         with:
