@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    name: Test and build image on PR
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
