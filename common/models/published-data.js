@@ -396,49 +396,8 @@ module.exports = function (PublishedData) {
   });
 
   PublishedData.beforeRemote("find", function (ctx, unused, next) {
-    const accessToken = ctx.args.options.accessToken;
-    if (!accessToken) {
-      let filter = {};
-      if (ctx.args.filter) {
-        if (ctx.args.filter.where) {
-          filter.where = {};
-          if (ctx.args.filter.where.and) {
-            filter.where.and = [];
-            filter.where.and.push({ status: "registered" });
-            filter.where.and = filter.where.and.concat(
-              ctx.args.filter.where.and
-            );
-          } else if (ctx.args.filter.where.or) {
-            filter.where.and = [];
-            filter.where.and.push({ status: "registered" });
-            filter.where.and.push({ or: ctx.args.filter.where.or });
-          } else {
-            filter.where = {
-              and: [{ status: "registered" }].concat(
-                ctx.args.filter.where
-              ),
-            };
-          }
-        } else {
-          filter.where = { status: "registered" };
-        }
-        if (ctx.args.filter.skip) {
-          filter.skip = ctx.args.filter.skip;
-        }
-        if (ctx.args.filter.limit) {
-          filter.limit = ctx.args.filter.limit;
-        }
-        if (ctx.args.filter.include) {
-          filter.include = ctx.args.filter.include;
-        }
-        if (ctx.args.filter.fields) {
-          filter.fields = ctx.args.filter.fields;
-        }
-      } else {
-        filter = { where: { status: "registered" } };
-      }
-      ctx.args.filter = filter;
-    }
+    const filter = addRegisteredIfUnathenticated(ctx, ctx.args.filter);
+    if (filter) ctx.args.filter = filter;
     next();
   });
 
@@ -455,4 +414,58 @@ module.exports = function (PublishedData) {
   // PublishedData.beforeRemote('patchOrCreate', function(ctx, instance, next) {
   //     next();
   // });
+
+  PublishedData.beforeRemote("count", function (ctx, unused, next) {
+    const filter = addRegisteredIfUnathenticated(ctx, ctx.args);
+    if (filter) ctx.args.where = filter.where;
+    next();
+  });
 };
+
+function addRegisteredIfUnathenticated(ctx, filterField) {
+  const filterClone = JSON.parse(JSON.stringify(filterField));
+  const accessToken = ctx.args.options.accessToken;
+  if (!accessToken) {
+    let filter = {};
+    if (filterClone) {
+      if (filterClone.where) {
+        filter.where = {};
+        if (filterClone.where.and) {
+          filter.where.and = [];
+          filter.where.and.push({ status: "registered" });
+          filter.where.and = filter.where.and.concat(
+            filterClone.where.and
+          );
+        } else if (filterClone.or) {
+          filter.where.and = [];
+          filter.where.and.push({ status: "registered" });
+          filter.where.and.push({ or: filterClone.where.or });
+        } else {
+          filter.where = {
+            and: [{ status: "registered" }].concat(
+              filterClone.where
+            ),
+          };
+        }
+      } else {
+        filter.where = { status: "registered" };
+      }
+      if (filterClone.skip) {
+        filter.skip = filterClone.skip;
+      }
+      if (filterClone.limit) {
+        filter.limit = filterClone.limit;
+      }
+      if (filterClone.include) {
+        filter.include = filterClone.include;
+      }
+      if (filterClone.fields) {
+        filter.fields = filterClone.fields;
+      }
+    } else {
+      filter = { where: { status: "registered" } };
+    }
+    return filter;
+  }
+}
+

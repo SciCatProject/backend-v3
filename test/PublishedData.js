@@ -180,6 +180,32 @@ describe("Test of access to published data", () => {
       });
   });
 
+  it("should return the registered publisheddata count", function (done) {
+    request(app)
+      .get("/api/v3/PublishedData/count")
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        res.body.count.should.be.equal(0);
+        done();
+      });
+  });
+
+  it("should return all the publisheddata count", function (done) {
+    request(app)
+      .get("/api/v3/PublishedData/count" + "?access_token=" + accessToken)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        res.body.count.should.be.equal(1);
+        done();
+      });
+  });
+
   it("should register this new published data", function (done) {
     nock("http://127.0.0.1:3000")
       .post("/api/v3/PublishedData/" + doi + "/register")
@@ -213,6 +239,19 @@ describe("Test of access to published data", () => {
       .end((err, res) => {
         if (err) return done(err);
         res.body.should.have.property("status").and.equal("registered");
+        done();
+      });
+  });
+
+  it("should return the registered publisheddata count", function (done) {
+    request(app)
+      .get("/api/v3/PublishedData/count")
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        res.body.count.should.be.equal(1);
         done();
       });
   });
