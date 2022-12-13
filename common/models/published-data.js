@@ -423,7 +423,7 @@ module.exports = function (PublishedData) {
 };
 
 function addRegisteredIfUnathenticated(ctx, filterField) {
-  const filterClone = JSON.parse(JSON.stringify(filterField));
+  const filterClone = filterField? JSON.parse(JSON.stringify(filterField)): undefined;
   const accessToken = ctx.args.options.accessToken;
   if (!accessToken) {
     let filter = {};
