@@ -243,6 +243,20 @@ describe("Test of access to published data", () => {
       });
   });
 
+  it("should get all registered data", function (done) {
+    request(app)
+      .get("/api/v3/PublishedData")
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, res) => {
+        if (err) return done(err);
+        res.body.length.should.be.equal(1);
+        res.body[0].should.have.property("status").and.equal("registered");
+        done();
+      });
+  });
+
   it("should return the registered publisheddata count", function (done) {
     request(app)
       .get("/api/v3/PublishedData/count")
