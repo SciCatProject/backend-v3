@@ -95,15 +95,21 @@ class M365Email {
 
 }
 
+exports.M365Email = M365Email;
 
 exports.sendEmailM365 = async(to, cc, subjectText, mailText, e, next, html = null) => {
   try {
     const client = new M365Authenticate(config.smtpSettings);
     const emailSender = new M365Email(client);
     const messageCofig = config.smtpMessage;
-    const message = emailSender.createEmailAsJson({ to: to.split(","), cc: cc ?cc.split(","): [] }, html, messageCofig.from, messageCofig.replyTo, messageCofig.subject);
+    const message = emailSender.createEmailAsJson(
+      { to: to.split(","), cc: cc ?cc.split(","): [] }, 
+      html, 
+      messageCofig.from, 
+      messageCofig.replyTo, 
+      messageCofig.subject
+    );
     emailSender.sendNotification(messageCofig.from, message);
-
   } catch (err) {
     console.log(err);
   }
