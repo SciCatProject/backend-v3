@@ -3,8 +3,10 @@ const fs = require("fs");
 const config = require("../config.local");
 const utils = require("../../common/models/utils");
 const Handlerbars = require("handlebars");
+const graphMail = require("./graph-mail");
 module.exports = (app) => {
 
+  const sendMail = config.smtpSettings && config.smtpSettings.graphEndpoint ? graphMail.sendEmailM365: utils.sendMail;
   const Job = app.models.Job;
   const jobTypes = Job.types;
   const Dataset = app.models.Dataset;
@@ -72,7 +74,7 @@ module.exports = (app) => {
     const emailTemplate = Handlerbars.compile(htmlTemplate);
     const email = emailTemplate(emailContext);
     const subject = emailContext.subject;
-    utils.sendMail(to, cc, subject, null, null, null, email);
+    sendMail(to, cc, subject, null, null, null, email);
   };
 
   // Check policy settings if mail should be sent
