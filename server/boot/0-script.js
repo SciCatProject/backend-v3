@@ -81,12 +81,13 @@ module.exports = function (app) {
       "datasetlifecycle.retrievable",
       "datasetlifecycle.publishable",
       "datasetlifecycle.archiveStatusMessage",
-      "datasetlifecycle.retrieveStatusMessage"
+      "datasetlifecycle.retrieveStatusMessage",
+      "techniques.pid"
     ];
 
     embedFields.forEach(function (field) {
       db.collection("Dataset").createIndex({
-        field: 1
+        [field]: 1
       },
       function (err) {
         if (!err) {
