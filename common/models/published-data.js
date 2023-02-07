@@ -327,9 +327,21 @@ module.exports = function (PublishedData) {
     if (!config) {
       return cb("No config.local");
     }
+    const OAIServerUri = config.oaiProviderRoute;
     delete data.doi;
     delete data._id;
-    const OAIServerUri = config.oaiProviderRoute;
+    const where = {
+      doi: doi,
+    };
+    if (!OAIServerUri) {
+      const res = PublishedData.update(where, { $set: data }, function (err) {
+        if (err) {
+          return cb(err);
+        }
+      });
+
+      return cb(null, res);
+    }
     let doiProviderCredentials = {
       username: "removed",
       password: "removed",
@@ -347,10 +359,6 @@ module.exports = function (PublishedData) {
         "content-type": "application/json;charset=UTF-8",
       },
       auth: doiProviderCredentials,
-    };
-
-    const where = {
-      doi: doi,
     };
 
     (async () => {

@@ -122,12 +122,14 @@ var testorigDataBlock = {
 };
 
 let app;
+const env = Object.assign({}, process.env);
 before(function () {
   app = require("../server/server");
 });
 
 afterEach((done) => {
   sandbox.restore();
+  process.env = env;
   done();
 });
 
@@ -270,28 +272,40 @@ describe("Test of access to published data", () => {
       });
   });
 
-  // actual test
-  /*it("should resync this new published data", function (done) {
-        request(app)
-            .post("/api/v3/PublishedData/" + doi + "/resync/?access_token=" + accessToken)
-            .send({data: modifiedPublishedData})
-            .set("Accept", "application/json")
-            .expect(200)
-            .expect("Content-Type", /json/)
-            .end((err, res) => {
-                if (err) return done(err);
-                done();
-            });
-    });*/
-
   it("should resync this new published data", function (done) {
-    nock("http://127.0.0.1:3000")
-      .post("/api/v3/PublishedData/" + doi + "/resync", { data: modifiedPublishedData })
-      .query({ "access_token": + accessToken })
-      .reply(200);
-    done();
+    const superAgentutils = require("../common/models/utils");
+    const superAgestStub = sandbox.stub(superAgentutils, "superagent").resolves(null);
+    request(app)
+      .post("/api/v3/PublishedData/" + doi + "/resync/?access_token=" + accessToken)
+      .send({ data: modifiedPublishedData })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err) => {
+        if (err) return done(err);
+        superAgestStub.notCalled.should.be.true;
+        done();
+      });
   });
 
+  it("should resync this new published data and call oaiprovider", function (done) {
+    const config = require("../server/config.local");
+    config.oaiProviderRoute = "oaiProviderRouteValue";
+    const superAgentutils = require("../common/models/utils");
+    const superAgestStub = sandbox.stub(superAgentutils, "superagent").resolves(null);
+    request(app)
+      .post("/api/v3/PublishedData/" + doi + "/resync/?access_token=" + accessToken)
+      .send({ data: modifiedPublishedData })
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err) => {
+        if (err) return done(err);
+        superAgestStub.calledOnce.should.be.true;
+        done();
+      });
+  });
+  
   it("should fetch this new published data", function (done) {
     request(app)
       .get("/api/v3/PublishedData/" + doi + "?access_token=" + accessToken)
