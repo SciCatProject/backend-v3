@@ -70,3 +70,37 @@ describe("utils.extractMetadataKeys", () => {
     chai.expect(res).to.deep.equal(utilsTestData.extractMetadataKeysExpectedData);
   });
 });
+
+describe("utils.isValidHttpUrl", () => {
+  const tests = [
+    ["http://aUrl.com", true],
+    ["https://aUrl.com", true],
+    ["aUrl.com", false],
+    ["ws://aUrl.com", false],
+    ["aUrl", false]
+  ];
+  tests.forEach(t => {
+    it(`should return ${t[1]} from ${t[0]}`, () => {
+      const res = utils.isValidHttpUrl(t[0]);
+      chai.expect(res).to.be.eql(t[1]);
+    });
+  });
+});
+
+describe("utils.transfromObjToLinksArray", () => {
+  const tests = [
+    [{ aKey: "http://aUrl" }, ["<a href=\"http://aUrl\">aKey</a>"]],
+    [{ aKey: "http://aUrl", aKey2: "http://aUrl2" }, ["<a href=\"http://aUrl\">aKey</a>", "<a href=\"http://aUrl2\">aKey2</a>"]],
+    [{ aKey: "http://aUrl", aKey2: "aNonUrl2" }, { aKey: "http://aUrl", aKey2: "aNonUrl2" }],
+    [{ aKey: "aNonUrl", aKey2: "aNonUrl2" }, { aKey: "aNonUrl", aKey2: "aNonUrl2" }],
+    [{}, {}],
+    [undefined, undefined],
+    [null, null],
+  ];
+  tests.forEach(t => {
+    it(`should attempt transforming to a ${JSON.stringify(t[1])}`, () => {
+      const res = utils.transfromObjToLinksArray(t[0]);
+      chai.expect(res).to.deep.equal(t[1]);
+    });
+  });
+});

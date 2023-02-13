@@ -201,6 +201,8 @@ module.exports = (app) => {
       //Check that statusMessage has changed. Only run on finished job
       if (currentJobData.jobStatusMessage != oldData.jobStatusMessage && currentJobData.jobStatusMessage.indexOf("finish") !== -1) {
         const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentJobData;
+        if (typeof jobResultObject === "object" && jobResultObject !== null && jobResultObject.result)
+          jobResultObject.result = utils.transfromObjToLinksArray(jobResultObject.result);
         let to = currentJobData.emailJobInitiator;
         const failure = jobStatusMessage.indexOf("finishedSuccessful") === -1;
         switch(jobType) {

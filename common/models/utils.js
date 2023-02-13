@@ -483,3 +483,20 @@ exports.superagent = (request) => {
   }
   return sao;
 };
+
+exports.isValidHttpUrl = (stringUrl) => {
+  let url;
+  try {
+    url = new URL(stringUrl);
+  } catch (_) {
+    return false;
+  }
+  return url.protocol === "http:" || url.protocol === "https:";
+};
+
+exports.transfromObjToLinksArray = (obj) => {
+  if (obj && Object.values(obj).length > 0 && Object.values(obj).every(exports.isValidHttpUrl))
+    return Object.keys(obj).map(k => `<a href="${obj[k]}">${k}</a>`);
+  else
+    return obj;
+};
