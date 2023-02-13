@@ -240,7 +240,7 @@ module.exports = (app) => {
           // add cc message in case of failure to scicat archivemanager
           const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
           const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
-          const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination." : "";
+          const additionalMsg = "";
           const emailContext = {
             subject: `SciCat: Your ${jobType} job from ${creationTime} is finished ${failure? "with failure": "successfully"}`,
             jobFinishedNotification: {
