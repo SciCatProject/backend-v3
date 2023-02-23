@@ -4,6 +4,11 @@ const config = require("../config.local");
 const utils = require("../../common/models/utils");
 const Handlerbars = require("handlebars");
 const graphMail = require("./graph-mail");
+
+Handlerbars.registerHelper("urlEncode", (inputData) => {
+  return encodeURIComponent(inputData);
+});
+
 module.exports = (app) => {
 
   const sendMail = config.smtpSettings && config.smtpSettings.graphEndpoint ? graphMail.sendEmailM365: utils.sendMail;
@@ -147,7 +152,8 @@ module.exports = (app) => {
           jobId: ctx.instance.id,
           jobType,
           jobData
-        }
+        },
+        config: config.smtpMessage,
       };
       const policy = await getPolicy(ctx, ids[0]);
       applyPolicyAndSendEmail(jobType, policy, emailContext, to);
@@ -200,20 +206,23 @@ module.exports = (app) => {
       const currentJobData = await Job.findById(oldData.id, ctx.options);
       //Check that statusMessage has changed. Only run on finished job
       if (currentJobData.jobStatusMessage != oldData.jobStatusMessage && currentJobData.jobStatusMessage.indexOf("finish") !== -1) {
-        const { type: jobType, id: jobId, jobStatusMessage, jobResultObject } = currentJobData;
+        const { type: jobType, id: jobId, jobStatusMessage, jobResultObject, jobParams } = currentJobData;
         let to = currentJobData.emailJobInitiator;
         const failure = jobStatusMessage.indexOf("finishedSuccessful") === -1;
         switch(jobType) {
         case jobTypes.ARCHIVE:
         case jobTypes.RETRIEVE: {
-          const ids = currentJobData.datasetList.map(x => x.pid);
+          const ids = [];
+          const filesMap = {};
+          ctx.instance.datasetList.map(x => (ids.push(x.pid), filesMap[x.pid] = x.files));
           const filter = {
             fields: {
               "pid": true,
               "sourceFolder": true,
               "size": true,
               "datasetlifecycle": true,
-              "ownerGroup": true
+              "ownerGroup": true,
+              "datasetName": true
             },
             where: {
               pid: {
@@ -230,7 +239,9 @@ module.exports = (app) => {
             retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
             archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
             retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
-            retrievable: x.datasetlifecycle.retrievable
+            retrievable: x.datasetlifecycle.retrievable,
+            name: x.datasetName,
+            files: filesMap[x.pid]
           }));
           // split result into good and bad
           const good = datasets.filter((x) => x.retrievable);
@@ -252,8 +263,10 @@ module.exports = (app) => {
                 good,
                 bad
               },
-              additionalMsg
-            }
+              additionalMsg,
+              jobParams,
+            },
+            config: config.smtpMessage,
           };
           const policy = await getPolicy(ctx, ids[0]);
           applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
