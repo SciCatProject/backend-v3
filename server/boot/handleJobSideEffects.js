@@ -212,9 +212,7 @@ module.exports = (app) => {
         switch(jobType) {
         case jobTypes.ARCHIVE:
         case jobTypes.RETRIEVE: {
-          const ids = [];
-          const filesMap = {};
-          ctx.instance.datasetList.map(x => (ids.push(x.pid), filesMap[x.pid] = x.files));
+          const ids = currentJobData.datasetList.map(x => x.pid);
           const filter = {
             fields: {
               "pid": true,
@@ -240,8 +238,7 @@ module.exports = (app) => {
             archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
             retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
             retrievable: x.datasetlifecycle.retrievable,
-            name: x.datasetName,
-            files: filesMap[x.pid]
+            name: x.datasetName
           }));
           // split result into good and bad
           const good = datasets.filter((x) => x.retrievable);
