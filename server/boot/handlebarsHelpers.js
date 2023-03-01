@@ -48,3 +48,7 @@ Handlebars.registerHelper("keyToWord", (string) => {
 Handlebars.registerHelper("eq", function(a, b) {
   return a === b;
 });
+
+Handlebars.registerHelper("urlEncode", (inputData) => {
+  return encodeURIComponent(inputData);
+});

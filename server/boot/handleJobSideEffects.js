@@ -5,10 +5,6 @@ const utils = require("../../common/models/utils");
 const Handlerbars = require("handlebars");
 const graphMail = require("./graph-mail");
 
-Handlerbars.registerHelper("urlEncode", (inputData) => {
-  return encodeURIComponent(inputData);
-});
-
 module.exports = (app) => {
 
   const sendMail = config.smtpSettings && config.smtpSettings.graphEndpoint ? graphMail.sendEmailM365: utils.sendMail;
