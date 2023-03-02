@@ -2,6 +2,7 @@
 // This file support rendering of email template
 const Handlebars = require("handlebars");
 const { formatBytes } = require("../../common/models/utils");
+const lodash = require("lodash");
 
 const unwrapJSON = (json)=> {
   if (typeof json === "boolean") {
@@ -61,4 +62,8 @@ Handlebars.registerHelper("formatBytes", (bytes) => {
 
 Handlebars.registerHelper("subString", (inputString, start, end) => {
   return new Handlebars.SafeString(inputString.substring(start, end));
+});
+
+Handlebars.registerHelper("strip", (inputString, char) => {
+  return new Handlebars.SafeString(lodash.trim(inputString, char));
 });
