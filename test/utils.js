@@ -70,3 +70,32 @@ describe("utils.extractMetadataKeys", () => {
     chai.expect(res).to.deep.equal(utilsTestData.extractMetadataKeysExpectedData);
   });
 });
+
+describe("utils.formatBytes", () => {
+  const tests = [
+    [0, "0 Bytes"],
+    [1, "1 Bytes"],
+    [123, "123 Bytes"],
+    [1234, "1 KB"],
+    [12345, "12 KB"],
+    [123456, "121 KB"],
+    [1234567, "1 MB"],
+    [12345678, "12 MB"],
+    [123456789, "118 MB"],
+    [1234567890, "1 GB"],
+    [12345678901, "11 GB"],
+    [123456789012, "115 GB"],
+    [1234567890123, "1 TB"],
+    [12345678901234, "11 TB"],
+    [123456789012345, "112 TB"],
+    [1234567890123456, "1 PB"],
+    [12345678901234567, "11 PB"],
+    [123456789012345678, "110 PB"],
+  ];
+  tests.forEach(([v, t]) => {
+    it(`should format bytes ${v} to human readable`, () => {
+      const res = utils.formatBytes(v);
+      chai.expect(res).to.be.eql(t);
+    });
+  });
+});

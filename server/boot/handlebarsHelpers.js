@@ -1,6 +1,8 @@
 "use strict";
 // This file support rendering of email template
 const Handlebars = require("handlebars");
+const { formatBytes } = require("../../common/models/utils");
+
 const unwrapJSON = (json)=> {
   if (typeof json === "boolean") {
     return json ? "Yes" : "No";
@@ -51,4 +53,8 @@ Handlebars.registerHelper("eq", function(a, b) {
 
 Handlebars.registerHelper("urlEncode", (inputData) => {
   return encodeURIComponent(inputData);
+});
+
+Handlebars.registerHelper("formatBytes", (bytes) => {
+  return formatBytes(bytes);
 });
