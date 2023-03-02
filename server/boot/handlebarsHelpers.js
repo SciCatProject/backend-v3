@@ -1,6 +1,8 @@
 "use strict";
 // This file support rendering of email template
 const Handlebars = require("handlebars");
+const { formatBytes } = require("../../common/models/utils");
+
 const unwrapJSON = (json)=> {
   if (typeof json === "boolean") {
     return json ? "Yes" : "No";
@@ -54,9 +56,5 @@ Handlebars.registerHelper("urlEncode", (inputData) => {
 });
 
 Handlebars.registerHelper("formatBytes", (bytes) => {
-  if (!+bytes) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(0))} ${sizes[i]}`;
+  return formatBytes(bytes);
 });
