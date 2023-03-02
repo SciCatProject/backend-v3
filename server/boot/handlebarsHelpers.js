@@ -58,3 +58,7 @@ Handlebars.registerHelper("urlEncode", (inputData) => {
 Handlebars.registerHelper("formatBytes", (bytes) => {
   return formatBytes(bytes);
 });
+
+Handlebars.registerHelper("subString", (inputString, start, end) => {
+  return new Handlebars.SafeString(inputString.substring(start, end));
+});
