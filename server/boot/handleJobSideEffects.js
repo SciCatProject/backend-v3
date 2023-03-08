@@ -207,42 +207,21 @@ module.exports = (app) => {
         const failure = jobStatusMessage.indexOf("finishedSuccessful") === -1;
         switch(jobType) {
         case jobTypes.ARCHIVE:
-        case jobTypes.RETRIEVE: {
-          const ids = currentJobData.datasetList.map(x => x.pid);
-          const filter = {
-            fields: {
-              "pid": true,
-              "sourceFolder": true,
-              "size": true,
-              "datasetlifecycle": true,
-              "ownerGroup": true,
-              "datasetName": true
-            },
-            where: {
-              pid: {
-                inq: ids
-              }
-            }
-          };
-          const datasets = (await Dataset.find(filter, ctx.options)).map(x => ({
-            pid: x.pid,
-            ownerGroup: x.ownerGroup,
-            sourceFolder: x.sourceFolder,
-            size: x.size,
-            archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
-            retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
-            archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
-            retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
-            retrievable: x.datasetlifecycle.retrievable,
-            name: x.datasetName
-          }));
-          // split result into good and bad
-          const good = datasets.filter((x) => x.retrievable);
-          const bad = datasets.filter((x) =>  !x.retrievable);
+        case jobTypes.RETRIEVE || jobTypes.PUBLIC: {
+          let good = jobResultObject.good;
+          let bad = jobResultObject.bad;
+          let ids;
+          if (!bad && !good)
+            ids = currentJobData.datasetList.map(x => x.pid);
+          ({ bad, good } = await extractGoodBadFromJob(ids));
           // add cc message in case of failure to scicat archivemanager
           const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
           const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
-          const additionalMsg = (jobType === jobTypes.RETRIEVE && good.length > 0) ? "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination." : "";
+          let additionalMsg = "";
+          if (jobType === jobTypes.RETRIEVE && good.length > 0) 
+            additionalMsg = "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination.";
+          else if (jobType === jobTypes.PUBLIC)
+            additionalMsg = "The datasets are now available in public storage and ready to be downloaded.";
           const emailContext = {
             subject: `SciCat: Your ${jobType} job from ${creationTime} is finished ${failure? "with failure": "successfully"}`,
             jobFinishedNotification: {
@@ -261,32 +240,13 @@ module.exports = (app) => {
             },
             config: config.smtpMessage,
           };
-          const policy = await getPolicy(ctx, ids[0]);
-          applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
-        }
-          break;
-        case jobTypes.PUBLIC: {
-          // Split result into good and bad
-          const good = jobResultObject.good;
-          const bad = jobResultObject.bad;
-          // add cc message in case of failure to scicat admin
-          const cc = (bad.length > 0 && config.smtpMessage && config.smtpMessage.from) ? config.smtpMessage.from : "";
-          const creationTime = currentJobData.creationTime.toISOString().replace(/T/, " ").replace(/\..+/, "");
-          const emailContext = {
-            subject: ` SciCat: Your ${jobType} job from ${creationTime} is finished ${failure ? "with failure" : "successfully"}`,
-            jobFinishedNotification: {
-              jobId,
-              jobType,
-              failure,
-              jobStatusMessage,
-              datasets: {
-                good,
-                bad
-              },
-              additionalMsg: "The datasets are now available in public storage and ready to be downloaded."
-            }
-          };
-          sendEmail(to, cc, emailContext);
+          if (jobType === jobTypes.RETRIEVE) {
+            const policy = await getPolicy(ctx, ids[0]);
+            applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
+          }
+          else 
+            sendEmail(to, cc, emailContext);
+
         }
           break;
         default:
@@ -295,7 +255,48 @@ module.exports = (app) => {
 
         }
       }
+
     });
+    const getDatasetsFromJob = async (ids) => {
+      const filter = {
+        fields: {
+          "pid": true,
+          "sourceFolder": true,
+          "size": true,
+          "datasetlifecycle": true,
+          "ownerGroup": true,
+          "datasetName": true
+        },
+        where: {
+          pid: {
+            inq: ids
+          }
+        }
+      };
+      const datasets = (await Dataset.find(filter, ctx.options)).map(x => ({
+        pid: x.pid,
+        ownerGroup: x.ownerGroup,
+        sourceFolder: x.sourceFolder,
+        size: x.size,
+        archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
+        retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
+        archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
+        retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
+        retrievable: x.datasetlifecycle.retrievable,
+        name: x.datasetName
+      }));
+      return datasets;
+    };
+    
+
+    const extractGoodBadFromJob = async () => {
+      const datasets = await getDatasetsFromJob();
+      // split result into good and bad
+      const good = datasets.filter((x) => x.retrievable);
+      const bad = datasets.filter((x) => !x.retrievable);
+      return { bad, good };
+    };
+
   };
     // Listen to events from Job
   jobEventEmitter.addListener("jobCreated", sendStartJobEmail);
