@@ -69,5 +69,5 @@ Handlebars.registerHelper("strip", (inputString, char) => {
 });
 
 Handlebars.registerHelper("or", (...args) => {
-  return args.some((element) => element);
+  return args.slice(0, -1).some((element) => element);
 });
