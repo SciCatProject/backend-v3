@@ -34,7 +34,7 @@ module.exports = (app) => {
       ownerGroup: x.ownerGroup,
       sourceFolder: x.sourceFolder,
       size: x.size,
-      ...dsExtraFieldsFunc,
+      ...dsExtraFieldsFunc(x),
     }));
     return datasets;
   };
@@ -268,9 +268,7 @@ module.exports = (app) => {
 
         }
       }
-
     });
-
   };
     // Listen to events from Job
   jobEventEmitter.addListener("jobCreated", sendStartJobEmail);
