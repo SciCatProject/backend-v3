@@ -67,3 +67,7 @@ Handlebars.registerHelper("subString", (inputString, start, end) => {
 Handlebars.registerHelper("strip", (inputString, char) => {
   return new Handlebars.SafeString(lodash.trim(inputString, char));
 });
+
+Handlebars.registerHelper("or", (...args) => {
+  return args.slice(0, -1).some((element) => element);
+});
