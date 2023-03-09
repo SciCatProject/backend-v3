@@ -7,11 +7,58 @@ const graphMail = require("./graph-mail");
 
 module.exports = (app) => {
 
+  const publicRetrieve = config.smtpMessage && config.smtpMessage.publicRetrieve;
   const sendMail = config.smtpSettings && config.smtpSettings.graphEndpoint ? graphMail.sendEmailM365: utils.sendMail;
   const Job = app.models.Job;
   const jobTypes = Job.types;
   const Dataset = app.models.Dataset;
   const jobEventEmitter = Job.eventEmitter;
+
+  const getDatasetsFromJob = async (ids, filterExtraFields, dsExtraFieldsFunc, options) => {
+    const filter = {
+      fields: {
+        pid: true,
+        sourceFolder: true,
+        size: true,
+        ownerGroup: true,
+        ...filterExtraFields,
+      },
+      where: {
+        pid: {
+          inq: ids
+        }
+      }
+    };
+    const datasets = (await Dataset.find(filter, options)).map(x => ({
+      pid: x.pid,
+      ownerGroup: x.ownerGroup,
+      sourceFolder: x.sourceFolder,
+      size: x.size,
+      ...dsExtraFieldsFunc,
+    }));
+    return datasets;
+  };
+
+  const extractGoodBadFromJob = async (ids, options) => {
+    const extraFields = {
+      datasetlifecycle: true,
+      datasetName: true
+    };
+    const extraFieldsFunc = (x) => {
+      return { archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
+        retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
+        archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
+        retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
+        retrievable: x.datasetlifecycle.retrievable,
+        name: x.datasetName };
+    };
+    const datasets = await getDatasetsFromJob(ids, extraFields, extraFieldsFunc, options);
+    // split result into good and bad
+    const good = datasets.filter((x) => x.retrievable);
+    const bad = datasets.filter((x) => !x.retrievable);
+    return { bad, good };
+  };
+
   const markDatasetsAsScheduled = async (ids, jobType) => {
     const statusMessage = { retrieve: "scheduledForRetrieval", archive: "scheduledForArchiving" };
     const filter = {
@@ -45,6 +92,7 @@ module.exports = (app) => {
       break;
     }
   };
+
   const getPolicy = async (ctx, id) => {
     const Policy = app.models.Policy;
     try {
@@ -113,7 +161,8 @@ module.exports = (app) => {
       break;
     }
   };
-    // Populate email context for job submission notification
+
+  // Populate email context for job submission notification
   const sendStartJobEmail = async (ctx) => {
     const ids = ctx.instance.datasetList.map(x => x.pid);
     const to = ctx.instance.emailJobInitiator;
@@ -122,36 +171,16 @@ module.exports = (app) => {
     case jobTypes.ARCHIVE:
     case jobTypes.RETRIEVE:
     case jobTypes.PUBLIC: {
-      const fields = {
-        pid: true,
-        sourceFolder: true,
-        size: true,
-        ownerGroup: true
-      };
       let datasetLifecycleFields = () => {return {};};
       let additionalMsg = "This job is created automatically when you made a request to download some dataset(s).";
-      if (ctx.instance.type !== jobTypes.PUBLIC) {
-        await markDatasetsAsScheduled(ids, jobType);
-        fields["datasetlifecycle"] = true;
+      let extraFields = {};
+      if (jobType !== jobTypes.PUBLIC) {
+        extraFields = { datasetlifecycle: true };
         additionalMsg = "";
         datasetLifecycleFields = (x) => {return { archivable: x.datasetlifecycle.archivable,
           retrievable: x.datasetlifecycle.retrievable };};
       }
-      const filter = {
-        fields: fields,
-        where: {
-          pid: {
-            inq: ids
-          }
-        }
-      };
-      const jobData = (await Dataset.find(filter, ctx.options)).map(x => ({
-        pid: x.pid,
-        ownerGroup: x.ownerGroup,
-        sourceFolder: x.sourceFolder,
-        size: x.size,
-        ...datasetLifecycleFields(x)
-      }));
+      const jobData = (await getDatasetsFromJob(ids, extraFields, datasetLifecycleFields, ctx.options));
       const emailContext = {
         subject: ` SciCat: Your ${jobType} job submitted successfully`,
         jobSubmissionNotification: {
@@ -162,7 +191,8 @@ module.exports = (app) => {
         },
         config: config.smtpMessage,
       };
-      if (ctx.instance.type !== jobTypes.PUBLIC || config.smtpSettings.applyPolicy) {
+      if (jobType !== jobTypes.PUBLIC || publicRetrieve) {
+        await markDatasetsAsScheduled(ids, jobType);
         const policy = await getPolicy(ctx, ids[0]);
         applyPolicyAndSendEmail(jobType, policy, emailContext, to);
       } else 
@@ -174,7 +204,8 @@ module.exports = (app) => {
       break;
     }
   };
-    // Populate email context for finished job notification
+
+  // Populate email context for finished job notification
   const sendFinishJobEmail = async (ctx) => {
     // Iterate through list of jobs that were updated
     // Iterate in case of bulk update send out email to each job
@@ -190,10 +221,10 @@ module.exports = (app) => {
         case jobTypes.RETRIEVE: 
         case jobTypes.PUBLIC: {
           let good, bad, ids, additionalMsg;
-          if (ctx.instance.type !== jobTypes.PUBLIC || config.smtpSettings.applyPolicy) {
+          if (jobType !== jobTypes.PUBLIC || publicRetrieve) {
             additionalMsg = "";
             ids = currentJobData.datasetList.map(x => x.pid);
-            ({ bad, good } = await extractGoodBadFromJob(ids));
+            ({ bad, good } = await extractGoodBadFromJob(ids, ctx.options));
             if (jobType === jobTypes.RETRIEVE && good.length > 0) 
               additionalMsg = "You can now use the command 'datasetRetriever' to move the retrieved datasets to their final destination.";
           }
@@ -223,13 +254,12 @@ module.exports = (app) => {
             },
             config: config.smtpMessage,
           };
-          if (ctx.instance.type !== jobTypes.PUBLIC || config.smtpSettings.applyPolicy) {
+          if (jobType !== jobTypes.PUBLIC || publicRetrieve) {
             const policy = await getPolicy(ctx, ids[0]);
             applyPolicyAndSendEmail(jobType, policy, emailContext, to, cc);
           }
           else 
             sendEmail(to, cc, emailContext);
-
         }
           break;
         default:
@@ -240,45 +270,6 @@ module.exports = (app) => {
       }
 
     });
-    const getDatasetsFromJob = async (ids) => {
-      const filter = {
-        fields: {
-          "pid": true,
-          "sourceFolder": true,
-          "size": true,
-          "datasetlifecycle": true,
-          "ownerGroup": true,
-          "datasetName": true
-        },
-        where: {
-          pid: {
-            inq: ids
-          }
-        }
-      };
-      const datasets = (await Dataset.find(filter, ctx.options)).map(x => ({
-        pid: x.pid,
-        ownerGroup: x.ownerGroup,
-        sourceFolder: x.sourceFolder,
-        size: x.size,
-        archiveStatusMessage: x.datasetlifecycle.archiveStatusMessage,
-        retrieveStatusMessage: x.datasetlifecycle.retrieveStatusMessage,
-        archiveReturnMessage: x.datasetlifecycle.archiveReturnMessage,
-        retrieveReturnMessage: x.datasetlifecycle.retrieveReturnMessage,
-        retrievable: x.datasetlifecycle.retrievable,
-        name: x.datasetName
-      }));
-      return datasets;
-    };
-    
-
-    const extractGoodBadFromJob = async () => {
-      const datasets = await getDatasetsFromJob();
-      // split result into good and bad
-      const good = datasets.filter((x) => x.retrievable);
-      const bad = datasets.filter((x) => !x.retrievable);
-      return { bad, good };
-    };
 
   };
     // Listen to events from Job
