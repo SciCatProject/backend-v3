@@ -14,6 +14,16 @@ module.exports = {
     username: process.env.SCICHAT_USER || "logbookReader",
     password: process.env.SCICHAT_PASSWORD || "logrdr",
   },
+  rabbitmq: {
+    enabled: true,
+    host: "localhost",
+    port: 5672,
+    username: "guest",
+    password: "guest",
+    // NOTE: The queue name comes from the duo-message-broker package
+    queue: "SCICAT_PROPOSAL",
+  },
+  proposalCreationStatusTrigger: process.env.PROPOSAL_CREATION_STATUS_TRIGGER || "ALLOCATED",
   datasetReductionEnabled: false,
   reductionKafkaBroker: "kafka:9092",
   reductionKafkaInputTopic: "reduce_input",
