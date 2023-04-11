@@ -514,6 +514,7 @@ module.exports = function (MongoQueryableModel) {
         // input format: "creationTime:desc,creationLocation:asc"
         const sortExpr = {};
         const sortFields = limits.order.split(",");
+        const addFields = []
         sortFields.map(function (sortField) {
           const parts = sortField.split(":");
           const dir = parts[1] == "desc" ? -1 : 1;
@@ -524,8 +525,17 @@ module.exports = function (MongoQueryableModel) {
           if (fieldName == idField) {
             fieldName = "_id";
           }
+          else if (fieldName === "runNumber") {
+            addFields.push({ 
+              "runNumber": { $sum: 
+                [ "scientificMetadata.runNumber.value", "scientificMetadata.runNumber"] 
+              }
+            });
+          }
           sortExpr[fieldName] = dir;
         });
+        if (addFields.length > 0) 
+          pipeline.push({ $addFields: addFields });
         pipeline.push({
           $sort: sortExpr
           // e.g. { $sort : { creationLocation : -1, creationLoation: 1 } }
