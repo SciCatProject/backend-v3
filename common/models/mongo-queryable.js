@@ -514,7 +514,7 @@ module.exports = function (MongoQueryableModel) {
         // input format: "creationTime:desc,creationLocation:asc"
         const sortExpr = {};
         const sortFields = limits.order.split(",");
-        const addFields = []
+        const addFields = [];
         sortFields.map(function (sortField) {
           const parts = sortField.split(":");
           const dir = parts[1] == "desc" ? -1 : 1;
@@ -526,9 +526,12 @@ module.exports = function (MongoQueryableModel) {
             fieldName = "_id";
           }
           else if (fieldName === "runNumber") {
-            addFields.push({ 
+            addFields.push({
               "runNumber": { $sum: 
-                [ "scientificMetadata.runNumber.value", "scientificMetadata.runNumber"] 
+                [ 
+                  { $toInt: "$scientificMetadata.runNumber.value" }, 
+                  { $convert: { input: "$scientificMetadata.runNumber", to: "int", onError: 0 } }
+                ]
               }
             });
           }
