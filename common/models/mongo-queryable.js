@@ -526,14 +526,12 @@ module.exports = function (MongoQueryableModel) {
             fieldName = "_id";
           }
           else if (fieldName === "runNumber") {
-            addFields.push({
-              "runNumber": { $sum: 
+            addFields["runNumber"] = { $sum: 
                 [ 
                   { $toInt: "$scientificMetadata.runNumber.value" }, 
                   { $convert: { input: "$scientificMetadata.runNumber", to: "int", onError: 0 } }
                 ]
-              }
-            });
+            };
           }
           sortExpr[fieldName] = dir;
         });
