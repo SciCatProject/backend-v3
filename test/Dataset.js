@@ -251,7 +251,7 @@ describe("Simple Dataset tests", () => {
   it("should fetch a filtered array of datasets", function (done) {
     const query = JSON.stringify({ 
       isPublished: false, 
-      "scientific":[{ "lhs":"runNumber","relation":"GREATER_THAN","rhs": 3, "unit": "" }]
+      "scientific": [{ "lhs": "runNumber", "relation": "EQUAL_TO_NUMERIC", "rhs": 3, "unit": "" }]
     });
     const limits = JSON.stringify({
       skip: 0,
@@ -273,7 +273,7 @@ describe("Simple Dataset tests", () => {
       .end((err, res) => {
         if (err) return done(err);
         res.body.should.be.an("array");
-        res.body[0].scientificMetadata.runNumber.value.should.eql(10);
+        res.body[0].scientificMetadata.runNumber.value.should.eql(3);
         done();
       });
   });

@@ -333,7 +333,7 @@ module.exports = function (MongoQueryableModel) {
       $facet: facetObject
     });
     // console.log("Resulting aggregate query in fullfacet method:", JSON.stringify(pipeline, null, 3));
-    
+
     app.models[options.modelName].getDataSource().connector.connect(function (err, db) {
       let mongoModel = modelName;
       if (app.models[modelName].definition.settings.mongodb &&
@@ -548,7 +548,6 @@ module.exports = function (MongoQueryableModel) {
         });
       }
     }
-    
     // console.log("Resulting aggregate query in fullquery method:", JSON.stringify(pipeline, null, 3));
     app.models[options.modelName].getDataSource().connector.connect(function (err, db) {
       // fetch calling parent collection
