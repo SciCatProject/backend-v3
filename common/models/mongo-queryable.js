@@ -326,15 +326,14 @@ module.exports = function (MongoQueryableModel) {
       }
       ];
     }
+    const addedFields = addFields();
+    pipeline.push({ $addFields: addedFields });
 
     pipeline.push({
       $facet: facetObject
     });
     // console.log("Resulting aggregate query in fullfacet method:", JSON.stringify(pipeline, null, 3));
     
-    const addedFields = addFields();
-    pipeline.push({ $addFields: addedFields });
-
     app.models[options.modelName].getDataSource().connector.connect(function (err, db) {
       let mongoModel = modelName;
       if (app.models[modelName].definition.settings.mongodb &&
@@ -510,6 +509,9 @@ module.exports = function (MongoQueryableModel) {
       }
     }
 
+    const addedFields = addFields();
+    pipeline.push({ $addFields: addedFields });
+
     // }
     // final paging section ===========================================================
     if (limits) {
@@ -546,10 +548,7 @@ module.exports = function (MongoQueryableModel) {
         });
       }
     }
-
-    const addedFields = addFields();
-    pipeline.push({ $addFields: addedFields });
-
+    
     // console.log("Resulting aggregate query in fullquery method:", JSON.stringify(pipeline, null, 3));
     app.models[options.modelName].getDataSource().connector.connect(function (err, db) {
       // fetch calling parent collection
