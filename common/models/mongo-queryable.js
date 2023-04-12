@@ -331,6 +331,9 @@ module.exports = function (MongoQueryableModel) {
       $facet: facetObject
     });
     // console.log("Resulting aggregate query in fullfacet method:", JSON.stringify(pipeline, null, 3));
+    
+    const addedFields = addFields();
+    pipeline.push({ $addFields: addedFields });
 
     app.models[options.modelName].getDataSource().connector.connect(function (err, db) {
       let mongoModel = modelName;
@@ -514,7 +517,6 @@ module.exports = function (MongoQueryableModel) {
         // input format: "creationTime:desc,creationLocation:asc"
         const sortExpr = {};
         const sortFields = limits.order.split(",");
-        const addFields = {};
         sortFields.map(function (sortField) {
           const parts = sortField.split(":");
           const dir = parts[1] == "desc" ? -1 : 1;
@@ -525,18 +527,8 @@ module.exports = function (MongoQueryableModel) {
           if (fieldName == idField) {
             fieldName = "_id";
           }
-          else if (fieldName === "runNumber") {
-            addFields["runNumber"] = { $sum: 
-                [ 
-                  { $toInt: "$scientificMetadata.runNumber.value" }, 
-                  { $convert: { input: "$scientificMetadata.runNumber", to: "int", onError: 0 } }
-                ]
-            };
-          }
           sortExpr[fieldName] = dir;
         });
-        if (addFields.length > 0) 
-          pipeline.push({ $addFields: addFields });
         pipeline.push({
           $sort: sortExpr
           // e.g. { $sort : { creationLocation : -1, creationLoation: 1 } }
@@ -554,6 +546,10 @@ module.exports = function (MongoQueryableModel) {
         });
       }
     }
+
+    const addedFields = addFields();
+    pipeline.push({ $addFields: addedFields });
+
     // console.log("Resulting aggregate query in fullquery method:", JSON.stringify(pipeline, null, 3));
     app.models[options.modelName].getDataSource().connector.connect(function (err, db) {
       // fetch calling parent collection
@@ -860,4 +856,17 @@ module.exports = function (MongoQueryableModel) {
     }
     return match;
   }
+
+  function addFields() {
+    return {
+      "scientificMetadata.runNumber.value": {
+        $ifNull: [
+          { $toInt: "scientificMetadata.runNumber.value" },
+          { $convert: { input: "scientificMetadata.runNumber", to: "int", onError: null } },
+          null
+        ]
+      }
+    };
+  }
+
 };
