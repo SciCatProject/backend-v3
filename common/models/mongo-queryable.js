@@ -859,7 +859,7 @@ module.exports = function (MongoQueryableModel) {
     return {
       "scientificMetadata.runNumber.value": {
         $ifNull: [
-          { $toInt: "$scientificMetadata.runNumber.value" },
+          { $convert: { input: "$scientificMetadata.runNumber.value", to: "int", onError: null } },
           { $convert: { input: "$scientificMetadata.runNumber", to: "int", onError: null } }
         ]
       }
