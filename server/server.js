@@ -140,7 +140,7 @@ if ("smtpSettings" in configLocal) {
 var bodyParser = require("body-parser");
 app.start = function() {
   // start the web server
-  return app.listen(function() {
+  const server = app.listen(function() {
     app.emit("started");
     var baseUrl = app.get("url").replace(/\/$/, "");
     console.log("Web server listening at: %s", baseUrl);
@@ -149,6 +149,9 @@ app.start = function() {
       console.log("Browse your REST API at %s%s", baseUrl, explorerPath);
     }
   });
+  if (configLocal.serverTimeout)
+    Object.entries(configLocal.serverTimeout).map(([k, v]) => server[k] = v);
+  return server;
 };
 
 // Bootstrap the application, configure models, datasources and middleware.
@@ -212,7 +215,9 @@ if (configLocal.expressSessionSecret){
   app.use(session({
     secret: configLocal.expressSessionSecret,
     resave: false,
-    saveUninitialized: configLocal.expressSessionSaveUninitialized || true,
+    saveUninitialized: configLocal.expressSessionSaveUninitialized === undefined?
+      true: 
+      configLocal.expressSessionSaveUninitialized,
     ...(configLocal.expressSessionStore? { store: require("./session-store").sessionStoreBuilder(app) }: {})
   }));
 }
