@@ -17,19 +17,6 @@ var passportConfigurator = new PassportConfigurator(app);
 
 var loginCallbacks = require("./boot/login-callbacks");
 
-// express sessions are required for passport ocid. If your
-// config.Local has a session for the expressionSecret, configure
-// express-session
-if (configLocal.expressSessionSecret){
-  var session = require("express-session");
-  app.use(session({
-    secret: configLocal.expressSessionSecret,
-    resave: false,
-    saveUninitialized: true
-  }));
-}
-
-
 // enhance the profile definition to allow for applying regexp based substitution rules to be applied
 // to the outcome of e.g. LDAP queries. This can for example be exploited to define the groups
 // a user belongs to by scanning the output of the memberOf fields of a user
@@ -217,6 +204,18 @@ passportConfigurator.setupModels({
   userCredentialModel: app.models.userCredential
 });
 
+// express sessions are required for passport ocid. If your
+// config.Local has a session for the expressionSecret, configure
+// express-session
+if (configLocal.expressSessionSecret){
+  var session = require("express-session");
+  app.use(session({
+    secret: configLocal.expressSessionSecret,
+    resave: false,
+    saveUninitialized: configLocal.expressSessionSaveUninitialized || true,
+    ...(configLocal.expressSessionStore? { store: require("./session-store").sessionStoreBuilder(app) }: {})
+  }));
+}
 
 
 // Configure passport strategies for third party auth providers
