@@ -326,6 +326,8 @@ module.exports = function (MongoQueryableModel) {
       }
       ];
     }
+    const addedFields = addFields();
+    pipeline.push({ $addFields: addedFields });
 
     pipeline.push({
       $facet: facetObject
@@ -506,6 +508,9 @@ module.exports = function (MongoQueryableModel) {
         pipeline.push(...allMatch);
       }
     }
+
+    const addedFields = addFields();
+    pipeline.push({ $addFields: addedFields });
 
     // }
     // final paging section ===========================================================
@@ -849,4 +854,16 @@ module.exports = function (MongoQueryableModel) {
     }
     return match;
   }
+
+  function addFields() {
+    return {
+      "scientificMetadata.runNumber.value": {
+        $ifNull: [
+          { $convert: { input: "$scientificMetadata.runNumber.value", to: "int", onError: null } },
+          { $convert: { input: "$scientificMetadata.runNumber", to: "int", onError: null } }
+        ]
+      }
+    };
+  }
+
 };

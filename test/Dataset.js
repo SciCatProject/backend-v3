@@ -32,7 +32,8 @@ const testdataset = {
   "accessGroups": [],
   "datasetName":"Example Data86",
   "history": ["this should be deleted"],
-  "createdBy": "this should be deleted as well"
+  "createdBy": "this should be deleted as well",
+  "scientificMetadata": { "runNumber": 3 }
 };
 
 let app;
@@ -218,18 +219,6 @@ describe("Simple Dataset tests", () => {
       });
   });
 
-  it("should delete this dataset", function(done) {
-    request(app)
-      .delete("/api/v3/Datasets/" + pid + "?access_token=" + accessTokenArchiveManager)
-      .set("Accept", "application/json")
-      .expect(200)
-      .expect("Content-Type", /json/)
-      .end((err, _res) => {
-        if (err) return done(err);
-        done();
-      });
-  });
-
   it("fetches array of Datasets", function(done) {
     request(app)
       .get(
@@ -260,7 +249,10 @@ describe("Simple Dataset tests", () => {
   });
 
   it("should fetch a filtered array of datasets", function (done) {
-    const query = JSON.stringify({ isPublished: false, text: "test" });
+    const query = JSON.stringify({ 
+      isPublished: false, 
+      "scientific": [{ "lhs": "runNumber", "relation": "EQUAL_TO_NUMERIC", "rhs": 3, "unit": "" }]
+    });
     const limits = JSON.stringify({
       skip: 0,
       limit: 3,
@@ -281,6 +273,19 @@ describe("Simple Dataset tests", () => {
       .end((err, res) => {
         if (err) return done(err);
         res.body.should.be.an("array");
+        res.body[0].scientificMetadata.runNumber.value.should.eql(3);
+        done();
+      });
+  });
+
+  it("should delete this dataset", function(done) {
+    request(app)
+      .delete("/api/v3/Datasets/" + pid + "?access_token=" + accessTokenArchiveManager)
+      .set("Accept", "application/json")
+      .expect(200)
+      .expect("Content-Type", /json/)
+      .end((err, _res) => {
+        if (err) return done(err);
         done();
       });
   });
