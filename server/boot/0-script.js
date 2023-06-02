@@ -82,7 +82,8 @@ module.exports = function (app) {
       "datasetlifecycle.publishable",
       "datasetlifecycle.archiveStatusMessage",
       "datasetlifecycle.retrieveStatusMessage",
-      "techniques.pid"
+      "techniques.pid",
+      "updatedAt"
     ];
 
     embedFields.forEach(function (field) {
