@@ -48,7 +48,7 @@
         {
           "arg": "logbooks",
           "type": "array",
-          "root": true,
+          "root": "true",
           "description": "Array of Logbook model instances"
         }
       ],

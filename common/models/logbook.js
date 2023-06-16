@@ -77,11 +77,15 @@ module.exports = function (Logbook) {
      * @returns {Logbook} Logbook model instance
      */
 
-  Logbook.findByName = async function (name, filters) {
+  Logbook.findByName = findsByNameCommon;
+
+  Logbook.findDatasetLogbook = findsByNameCommon;
+
+  async function findsByNameCommon(name, filters = "{}") {
     if (logbookEnabled) {
       try {
         const accessToken = await login(username, password);
-        console.log("Fetching logbook", { name, filters });
+        logger.logInfo("Fetching logbook", { name, filters });
         const res = await superagent
           .get(
             baseUrl +
@@ -112,7 +116,7 @@ module.exports = function (Logbook) {
       }
     }
     return [];
-  };
+  }
 
   /**
      * Send message to a Logbook
@@ -125,7 +129,7 @@ module.exports = function (Logbook) {
     if (logbookEnabled) {
       try {
         const accessToken = await login(username, password);
-        console.log("Sending message", { name, data });
+        logger.logInfo("Sending message", { name, data });
         const res = await superagent
           .post(baseUrl + `/Logbooks/${name}/message`)
           .set({ Authorization: `Bearer ${accessToken}` })
@@ -214,10 +218,18 @@ async function getUserProposalIds(userId) {
       roleNameList.push(user.username);
       options.currentGroups = roleNameList;
     }
+    options.currentGroups = [...new Set(options.currentGroups)];
 
-    const proposals = await Proposal.find({
-      where: { ownerGroup: { inq: options.currentGroups } },
-    });
+    let proposals = {};
+    if ( options.currentGroups.includes("admin") ) {
+      proposals = await Proposal.find();
+    } else {
+      proposals = await Proposal.find({
+        where: { 
+          ownerGroup: { inq: options.currentGroups },
+        }
+      });
+    }
     return proposals.map((proposal) => proposal.proposalId);
   } catch (err) {
     logger.logError(err.message, {
